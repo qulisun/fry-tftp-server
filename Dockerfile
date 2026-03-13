@@ -1,4 +1,4 @@
-FROM rust:1.77-slim AS builder
+FROM rust:1.94-slim AS builder
 WORKDIR /build
 COPY . .
 RUN cargo build --release --no-default-features
