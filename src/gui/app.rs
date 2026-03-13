@@ -34,7 +34,6 @@ pub struct TftpApp {
     log_buffer: LogBuffer,
     tray_state: Option<TrayState>,
     last_tray_visual: TrayVisualState,
-    minimize_to_tray: bool,
     /// Tokio runtime handle for spawning server restart tasks
     rt_handle: tokio::runtime::Handle,
 
@@ -64,7 +63,6 @@ impl TftpApp {
             log_buffer,
             tray_state,
             last_tray_visual: TrayVisualState::Running,
-            minimize_to_tray: true,
             rt_handle: tokio::runtime::Handle::current(),
             dashboard: DashboardState::new(),
             files: FilesState::new(root),
@@ -119,14 +117,7 @@ impl eframe::App for TftpApp {
             }
         }
 
-        // Minimize to tray: intercept close event
-        if self.minimize_to_tray
-            && self.tray_state.is_some()
-            && ctx.input(|i| i.viewport().close_requested())
-        {
-            ctx.send_viewport_cmd(egui::ViewportCommand::CancelClose);
-            ctx.send_viewport_cmd(egui::ViewportCommand::Visible(false));
-        }
+        // Close window = quit app (shutdown server and exit)
 
         // Collect state snapshots outside of UI rendering
         let server_state = self.state.get_server_state();
