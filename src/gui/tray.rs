@@ -18,9 +18,23 @@ fn load_icon_from_png() -> Icon {
     let info = reader
         .next_frame(&mut buf)
         .expect("failed to decode tray icon PNG");
-    let rgba = &buf[..info.buffer_size()];
-    Icon::from_rgba(rgba.to_vec(), info.width, info.height)
-        .expect("failed to create tray icon from PNG")
+    let raw = &buf[..info.buffer_size()];
+
+    // Convert to RGBA if needed (PNG may be RGB without alpha)
+    let rgba = match info.color_type {
+        png::ColorType::Rgba => raw.to_vec(),
+        png::ColorType::Rgb => {
+            let mut out = Vec::with_capacity((info.width * info.height * 4) as usize);
+            for chunk in raw.chunks(3) {
+                out.extend_from_slice(chunk);
+                out.push(255); // fully opaque
+            }
+            out
+        }
+        _ => raw.to_vec(), // fallback
+    };
+
+    Icon::from_rgba(rgba, info.width, info.height).expect("failed to create tray icon from PNG")
 }
 
 pub fn create_tray() -> anyhow::Result<TrayState> {
