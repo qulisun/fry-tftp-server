@@ -30,9 +30,9 @@ pub async fn run(
 
     let app_state_for_close = state.clone();
 
-    // Load window icon from embedded PNG
+    // Load window/dock icon from embedded 256px PNG
     let icon = {
-        let png_bytes = include_bytes!("tray_icon_32.png");
+        let png_bytes = include_bytes!("app_icon_256.png");
         let decoder = png::Decoder::new(std::io::Cursor::new(png_bytes as &[u8]));
         let mut reader = decoder.read_info().expect("failed to read icon PNG");
         let mut buf = vec![0u8; reader.output_buffer_size()];
