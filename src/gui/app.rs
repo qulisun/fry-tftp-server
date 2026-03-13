@@ -201,20 +201,13 @@ impl eframe::App for TftpApp {
             });
         });
 
-        // About panel (right-side overlay)
+        // About panel (right-side, between top and bottom headers)
         if self.show_about {
             egui::SidePanel::right("about_panel")
                 .default_width(280.0)
                 .resizable(false)
                 .show(ctx, |ui| {
-                    ui.horizontal(|ui| {
-                        ui.heading("About");
-                        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                            if ui.button("Close").clicked() {
-                                self.show_about = false;
-                            }
-                        });
-                    });
+                    ui.heading("About");
                     ui.separator();
                     ui.add_space(8.0);
 
@@ -246,13 +239,19 @@ impl eframe::App for TftpApp {
                         });
 
                     ui.add_space(12.0);
-                    ui.separator();
-                    ui.add_space(8.0);
                     ui.label(
                         egui::RichText::new("Built with Rust, egui, tokio, ratatui")
                             .small()
                             .weak(),
                     );
+
+                    // Close button at bottom-right
+                    ui.with_layout(egui::Layout::bottom_up(egui::Align::RIGHT), |ui| {
+                        ui.add_space(4.0);
+                        if ui.button("Close").clicked() {
+                            self.show_about = false;
+                        }
+                    });
                 });
         }
 
