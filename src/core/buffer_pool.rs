@@ -3,13 +3,13 @@
 //! Reduces allocator pressure by recycling `Vec<u8>` buffers between sessions.
 //! Uses a simple `Mutex<Vec>` which is sufficient for typical concurrency (~100 sessions).
 
-use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
 use std::sync::Mutex;
 
 /// A lock-based buffer pool for reusing packet buffers across sessions.
 pub struct BufferPool {
     pool: Mutex<Vec<Vec<u8>>>,
-    buf_size: usize,
+    buf_size: AtomicUsize,
     capacity: usize,
     pub hits: AtomicU64,
     pub misses: AtomicU64,
@@ -23,7 +23,7 @@ impl BufferPool {
     pub fn new(capacity: usize, buf_size: usize) -> Self {
         Self {
             pool: Mutex::new(Vec::with_capacity(capacity)),
-            buf_size,
+            buf_size: AtomicUsize::new(buf_size),
             capacity,
             hits: AtomicU64::new(0),
             misses: AtomicU64::new(0),
@@ -33,15 +33,16 @@ impl BufferPool {
     /// Acquire a buffer from the pool, or allocate a new one if empty.
     /// The returned buffer is zeroed and sized to `buf_size`.
     pub fn acquire(&self) -> Vec<u8> {
+        let size = self.buf_size.load(Ordering::Relaxed);
         let mut pool = self.pool.lock().unwrap();
         if let Some(mut buf) = pool.pop() {
             buf.clear();
-            buf.resize(self.buf_size, 0);
+            buf.resize(size, 0);
             self.hits.fetch_add(1, Ordering::Relaxed);
             buf
         } else {
             self.misses.fetch_add(1, Ordering::Relaxed);
-            vec![0u8; self.buf_size]
+            vec![0u8; size]
         }
     }
 
@@ -53,6 +54,18 @@ impl BufferPool {
             pool.push(buf);
         }
         // else: drop — pool is full
+    }
+
+    /// Update buffer size and drain stale buffers. New acquires use the new size.
+    pub fn update_buf_size(&self, new_buf_size: usize) {
+        self.buf_size.store(new_buf_size, Ordering::Relaxed);
+        let mut pool = self.pool.lock().unwrap();
+        pool.clear(); // drop old-sized buffers
+    }
+
+    /// Get the current buffer size.
+    pub fn buf_size(&self) -> usize {
+        self.buf_size.load(Ordering::Relaxed)
     }
 
     /// Current number of buffers in the pool.

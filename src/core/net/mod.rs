@@ -1,6 +1,6 @@
 use anyhow::Result;
 use socket2::{Domain, Protocol, Socket, Type};
-use std::net::{Ipv4Addr, Ipv6Addr, SocketAddr};
+use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr};
 
 use crate::core::config::Config;
 
@@ -27,23 +27,36 @@ impl IpVersion {
 pub fn create_main_socket(config: &Config) -> Result<tokio::net::UdpSocket> {
     let ip_version = IpVersion::from_str(&config.network.ip_version);
 
+    // Parse bind_address; fall back to UNSPECIFIED if invalid
+    let parsed_ip: Option<IpAddr> = config.server.bind_address.parse().ok();
+
     let (socket, bind_addr) = match ip_version {
         IpVersion::Dual => {
             let socket = Socket::new(Domain::IPV6, Type::DGRAM, Some(Protocol::UDP))?;
             socket.set_only_v6(false)?; // dual-stack
-            let addr = SocketAddr::from((Ipv6Addr::UNSPECIFIED, config.server.port));
-            (socket, addr)
+            let ip = match parsed_ip {
+                Some(IpAddr::V6(v6)) => v6,
+                Some(IpAddr::V4(v4)) => v4.to_ipv6_mapped(),
+                None => Ipv6Addr::UNSPECIFIED,
+            };
+            (socket, SocketAddr::from((ip, config.server.port)))
         }
         IpVersion::V4 => {
             let socket = Socket::new(Domain::IPV4, Type::DGRAM, Some(Protocol::UDP))?;
-            let addr = SocketAddr::from((Ipv4Addr::UNSPECIFIED, config.server.port));
-            (socket, addr)
+            let ip = match parsed_ip {
+                Some(IpAddr::V4(v4)) => v4,
+                _ => Ipv4Addr::UNSPECIFIED,
+            };
+            (socket, SocketAddr::from((ip, config.server.port)))
         }
         IpVersion::V6 => {
             let socket = Socket::new(Domain::IPV6, Type::DGRAM, Some(Protocol::UDP))?;
             socket.set_only_v6(true)?; // IPv6 only
-            let addr = SocketAddr::from((Ipv6Addr::UNSPECIFIED, config.server.port));
-            (socket, addr)
+            let ip = match parsed_ip {
+                Some(IpAddr::V6(v6)) => v6,
+                _ => Ipv6Addr::UNSPECIFIED,
+            };
+            (socket, SocketAddr::from((ip, config.server.port)))
         }
     };
 

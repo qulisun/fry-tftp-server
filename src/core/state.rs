@@ -206,6 +206,12 @@ impl AppState {
             ovr.ip_version.clone(),
             ovr.log_level.clone(),
         );
+        // Update buffer pool if max_blksize changed
+        let new_buf_size = new_config.protocol.max_blksize as usize + 4;
+        if self.buffer_pool.buf_size() != new_buf_size {
+            self.buffer_pool.update_buf_size(new_buf_size);
+        }
+
         self.config.store(Arc::new(new_config));
         Ok(())
     }
