@@ -9,7 +9,7 @@ use tokio_util::sync::CancellationToken;
 use uuid::Uuid;
 
 use crate::core::buffer_pool::BufferPool;
-use crate::core::config::Config;
+use crate::core::config::{CliOverrides, Config};
 
 /// Server running state
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -131,10 +131,13 @@ pub struct AppState {
 
     // Pre-allocated buffer pool for session packet buffers
     pub buffer_pool: BufferPool,
+
+    // CLI overrides preserved across config reloads
+    pub cli_overrides: CliOverrides,
 }
 
 impl AppState {
-    pub fn new(config: Config) -> Arc<Self> {
+    pub fn new(config: Config, cli_overrides: CliOverrides) -> Arc<Self> {
         let buffer_pool = BufferPool::new(
             config.session.max_sessions,
             config.protocol.max_blksize as usize + 4,
@@ -154,6 +157,7 @@ impl AppState {
             bandwidth_prev_tx: AtomicU64::new(0),
             bandwidth_prev_rx: AtomicU64::new(0),
             buffer_pool,
+            cli_overrides,
         })
     }
 
@@ -185,6 +189,25 @@ impl AppState {
 
     pub fn config(&self) -> Arc<Config> {
         self.config.load_full()
+    }
+
+    /// Reload config from disk, preserving CLI overrides.
+    pub fn reload_config(&self) -> anyhow::Result<()> {
+        let ovr = &self.cli_overrides;
+        let mut new_config = Config::load(ovr.config_path.as_deref())?;
+        new_config.apply_overrides(
+            ovr.port,
+            ovr.bind.clone(),
+            ovr.root.clone(),
+            ovr.allow_write,
+            ovr.max_sessions,
+            ovr.blksize,
+            ovr.windowsize,
+            ovr.ip_version.clone(),
+            ovr.log_level.clone(),
+        );
+        self.config.store(Arc::new(new_config));
+        Ok(())
     }
 
     /// Get a clone of the current shutdown token

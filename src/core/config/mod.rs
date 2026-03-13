@@ -1,6 +1,21 @@
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
+/// Captured CLI overrides so they survive config reload.
+#[derive(Debug, Clone, Default)]
+pub struct CliOverrides {
+    pub config_path: Option<PathBuf>,
+    pub port: Option<u16>,
+    pub bind: Option<String>,
+    pub root: Option<PathBuf>,
+    pub allow_write: bool,
+    pub max_sessions: Option<usize>,
+    pub blksize: Option<u16>,
+    pub windowsize: Option<u16>,
+    pub ip_version: Option<String>,
+    pub log_level: Option<String>,
+}
+
 /// Log a message via tracing if initialized, otherwise fall back to eprintln.
 /// This is needed because Config::load() is called both at startup (before tracing)
 /// and at runtime (e.g. server restart from TUI/GUI where tracing is active).
@@ -339,7 +354,10 @@ impl Config {
         config.apply_env_overrides();
         // Auto-create config file with defaults so GUI/TUI changes persist on next restart
         match config.save() {
-            Ok(path) => log_or_eprint(format!("[config] created default config at {}", path.display())),
+            Ok(path) => log_or_eprint(format!(
+                "[config] created default config at {}",
+                path.display()
+            )),
             Err(e) => log_or_eprint(format!("[config] could not create default config: {}", e)),
         }
         Ok(config)

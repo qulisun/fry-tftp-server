@@ -1,7 +1,6 @@
 use std::sync::Arc;
 use tokio_util::sync::CancellationToken;
 
-use crate::core::config::Config;
 use crate::core::state::AppState;
 
 pub async fn register_signals(shutdown_token: CancellationToken, state: Option<Arc<AppState>>) {
@@ -81,9 +80,8 @@ pub async fn register_signals(shutdown_token: CancellationToken, state: Option<A
             loop {
                 sighup.recv().await;
                 tracing::info!("received SIGHUP, reloading config");
-                match Config::load(None) {
-                    Ok(new_config) => {
-                        state.config.store(Arc::new(new_config));
+                match state.reload_config() {
+                    Ok(()) => {
                         tracing::info!("config reloaded via SIGHUP");
                     }
                     Err(e) => {

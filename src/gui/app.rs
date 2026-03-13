@@ -188,9 +188,11 @@ impl eframe::App for TftpApp {
                                 let state = self.state.clone();
                                 self.dashboard = DashboardState::new();
                                 self.rt_handle.spawn(async move {
-                                    // Reload config from disk
-                                    let new_config =
-                                        crate::core::config::Config::load(None).unwrap_or_default();
+                                    // Reload config from disk, preserving CLI overrides
+                                    let new_config = state
+                                        .reload_config()
+                                        .map(|()| (*state.config()).clone())
+                                        .unwrap_or_default();
                                     state.reset_for_restart(new_config).await;
                                     if let Err(e) = crate::core::run_server(state.clone()).await {
                                         tracing::error!(error=%e, "server start failed");

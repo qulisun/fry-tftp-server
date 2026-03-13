@@ -784,7 +784,7 @@ async fn run_write_session(
                                         );
                                         state.update_session(session_id, bytes_received, SessionStatus::Transferring).await;
 
-                                        if is_last {
+                                        if is_last && window_buf.is_empty() {
                                             // Send final ACK
                                             let ack = serialize_packet(&Packet::Ack { block });
                                             socket.send_to(&ack, client_addr).await?;

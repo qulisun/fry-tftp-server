@@ -18,7 +18,6 @@ const MAX_IPC_CONNECTIONS: usize = 50;
 /// Per-connection read timeout to prevent idle connections from holding slots.
 const IPC_CONNECTION_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(10);
 
-use crate::core::config::Config;
 use crate::core::state::AppState;
 
 /// Build a JSON status response from the current server state.
@@ -50,9 +49,8 @@ fn handle_command(cmd: &str, state: &Arc<AppState>) -> String {
     let cmd = cmd.trim();
     match cmd {
         "status" => build_status_json(state),
-        "reload" => match Config::load(None) {
-            Ok(new_config) => {
-                state.config.store(Arc::new(new_config));
+        "reload" => match state.reload_config() {
+            Ok(()) => {
                 tracing::info!("config reloaded via IPC");
                 r#"{"ok":true,"message":"config reloaded"}"#.to_string()
             }

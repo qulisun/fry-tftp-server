@@ -12,7 +12,7 @@ use windows_service::service::{
 use windows_service::service_control_handler::{self, ServiceControlHandlerResult};
 use windows_service::{define_windows_service, service_dispatcher};
 
-use crate::core::config::Config;
+use crate::core::config::{CliOverrides, Config};
 use crate::core::state::AppState;
 
 const SERVICE_NAME: &str = "FryTFTPServer";
@@ -45,11 +45,11 @@ fn service_main(arguments: Vec<OsString>) {
 
 fn run_service(_arguments: Vec<OsString>) -> Result<(), Box<dyn std::error::Error>> {
     let shutdown_token = CancellationToken::new();
-    let reload_token = CancellationToken::new();
+    let reload_notify = Arc::new(tokio::sync::Notify::new());
 
     // Set up service control handler
     let shutdown = shutdown_token.clone();
-    let reload = reload_token.clone();
+    let reload = reload_notify.clone();
     let status_handle =
         service_control_handler::register(SERVICE_NAME, move |control| match control {
             ServiceControl::Stop | ServiceControl::Shutdown => {
@@ -59,7 +59,7 @@ fn run_service(_arguments: Vec<OsString>) -> Result<(), Box<dyn std::error::Erro
             }
             ServiceControl::ParamChange => {
                 tracing::info!("received service control: param change (config reload)");
-                reload.cancel();
+                reload.notify_one();
                 ServiceControlHandlerResult::NoError
             }
             ServiceControl::Interrogate => ServiceControlHandlerResult::NoError,
@@ -86,7 +86,7 @@ fn run_service(_arguments: Vec<OsString>) -> Result<(), Box<dyn std::error::Erro
         .build()?;
 
     let result = runtime.block_on(async {
-        let state = AppState::new(config);
+        let state = AppState::new(config, CliOverrides::default());
         // Wire shutdown token: when Windows service stops, cancel server
         let state_for_stop = state.clone();
         let svc_shutdown = shutdown_token.clone();
@@ -99,11 +99,10 @@ fn run_service(_arguments: Vec<OsString>) -> Result<(), Box<dyn std::error::Erro
         let reload_state = state.clone();
         tokio::spawn(async move {
             loop {
-                reload_token.cancelled().await;
+                reload_notify.notified().await;
                 tracing::info!("reloading config via service control");
-                match Config::load(None) {
-                    Ok(new_config) => {
-                        reload_state.config.store(Arc::new(new_config));
+                match reload_state.reload_config() {
+                    Ok(()) => {
                         tracing::info!("config reloaded successfully");
                     }
                     Err(e) => {

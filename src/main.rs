@@ -107,17 +107,31 @@ fn main() -> anyhow::Result<()> {
         }
     };
 
+    // Capture CLI overrides for config reload
+    let cli_overrides = fry_tftp_server::core::config::CliOverrides {
+        config_path: cli.config.map(PathBuf::from),
+        port: cli.port,
+        bind: cli.bind.clone(),
+        root: cli.root.clone(),
+        allow_write: cli.allow_write,
+        max_sessions: cli.max_sessions,
+        blksize: cli.blksize,
+        windowsize: cli.windowsize,
+        ip_version: cli.ip_version.clone(),
+        log_level: log_level.clone(),
+    };
+
     // Apply CLI overrides
     config.apply_overrides(
-        cli.port,
-        cli.bind,
-        cli.root,
-        cli.allow_write,
-        cli.max_sessions,
-        cli.blksize,
-        cli.windowsize,
-        cli.ip_version,
-        log_level,
+        cli_overrides.port,
+        cli_overrides.bind.clone(),
+        cli_overrides.root.clone(),
+        cli_overrides.allow_write,
+        cli_overrides.max_sessions,
+        cli_overrides.blksize,
+        cli_overrides.windowsize,
+        cli_overrides.ip_version.clone(),
+        cli_overrides.log_level.clone(),
     );
 
     // Resource limits check (E2, Unix only)
@@ -139,7 +153,7 @@ fn main() -> anyhow::Result<()> {
         #[cfg(feature = "gui")]
         {
             let log_buffer = init_logging_with_buffer(&config, true);
-            let state = AppState::new(config);
+            let state = AppState::new(config, cli_overrides.clone());
             runtime.block_on(fry_tftp_server::gui::run(state, log_buffer))?;
         }
         #[cfg(not(feature = "gui"))]
@@ -150,7 +164,7 @@ fn main() -> anyhow::Result<()> {
         #[cfg(feature = "tui")]
         {
             let log_buffer = init_logging_with_buffer(&config, false);
-            let state = AppState::new(config);
+            let state = AppState::new(config, cli_overrides.clone());
             runtime.block_on(fry_tftp_server::tui::run(state, log_buffer))?;
         }
         #[cfg(not(feature = "tui"))]
@@ -159,7 +173,7 @@ fn main() -> anyhow::Result<()> {
         }
     } else {
         init_logging(&config);
-        let state = AppState::new(config);
+        let state = AppState::new(config, cli_overrides);
         runtime.block_on(fry_tftp_server::headless::run(state))?;
     }
 

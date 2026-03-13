@@ -336,9 +336,8 @@ async fn spawn_config_watcher(
                         let now = std::time::Instant::now();
                         if now.duration_since(last_reload) >= debounce {
                             last_reload = now;
-                            match Config::load(None) {
-                                Ok(new_config) => {
-                                    state.config.store(Arc::new(new_config));
+                            match state.reload_config() {
+                                Ok(()) => {
                                     tracing::info!("config reloaded via file watcher");
                                 }
                                 Err(e) => {

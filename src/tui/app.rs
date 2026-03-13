@@ -623,8 +623,10 @@ impl TuiApp {
                         let state = self.state.clone();
                         let rt = tokio::runtime::Handle::current();
                         rt.spawn(async move {
-                            let new_config =
-                                crate::core::config::Config::load(None).unwrap_or_default();
+                            let new_config = state
+                                .reload_config()
+                                .map(|()| (*state.config()).clone())
+                                .unwrap_or_default();
                             state.reset_for_restart(new_config).await;
                             if let Err(e) = crate::core::run_server(state.clone()).await {
                                 tracing::error!(error=%e, "server start failed");
@@ -821,16 +823,17 @@ impl TuiApp {
         };
         let title = Line::from(vec![
             Span::raw(" Fry TFTP Server ["),
-            Span::styled(status_str, Style::default().fg(status_color).add_modifier(Modifier::BOLD)),
+            Span::styled(
+                status_str,
+                Style::default()
+                    .fg(status_color)
+                    .add_modifier(Modifier::BOLD),
+            ),
             Span::raw("] "),
         ]);
         let tabs = Tabs::new(titles)
             .select(self.current_tab.index())
-            .block(
-                Block::default()
-                    .borders(Borders::ALL)
-                    .title(title),
-            )
+            .block(Block::default().borders(Borders::ALL).title(title))
             .highlight_style(
                 Style::default()
                     .fg(Color::Yellow)
@@ -910,7 +913,10 @@ impl TuiApp {
                 _ => "s: ...",
             };
             if self.current_tab == Tab::Acl {
-                format!(" a: add | e: edit | d: delete | /: filter | {} | q: quit | ?: help ", s_action)
+                format!(
+                    " a: add | e: edit | d: delete | /: filter | {} | q: quit | ?: help ",
+                    s_action
+                )
             } else {
                 format!(" 1-7: tabs | j/k: scroll | /: filter | Enter: select | {} | r: reload | q: quit | ?: help ", s_action)
             }
