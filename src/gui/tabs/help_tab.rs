@@ -163,7 +163,7 @@ pub fn draw(ui: &mut Ui, help: &mut HelpState) {
                         ui.end_row();
 
                         ui.strong("License:");
-                        ui.label("Proprietary");
+                        ui.label("MIT");
                         ui.end_row();
                     });
 

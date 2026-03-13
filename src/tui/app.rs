@@ -291,6 +291,15 @@ impl TuiApp {
         self.files_dirty = false;
     }
 
+    fn dashboard_reset(&mut self) {
+        self.bw_tx.clear();
+        self.bw_rx.clear();
+        self.prev_tx = 0;
+        self.prev_rx = 0;
+        self.cur_tx_rate = 0.0;
+        self.cur_rx_rate = 0.0;
+    }
+
     fn refresh_config(&mut self) {
         let c = self.state.config();
         self.config_items = vec![
@@ -601,7 +610,31 @@ impl TuiApp {
         match key.code {
             KeyCode::Char('q') => return true,
             KeyCode::Char('?') => self.show_help = true,
-            KeyCode::Char('s') => self.state.cancel_shutdown(),
+            KeyCode::Char('s') => {
+                let server_state = self.state.get_server_state();
+                match server_state {
+                    ServerState::Running => {
+                        self.start_time = Instant::now();
+                        self.state.cancel_shutdown();
+                    }
+                    ServerState::Stopped | ServerState::Error => {
+                        self.start_time = Instant::now();
+                        self.dashboard_reset();
+                        let state = self.state.clone();
+                        let rt = tokio::runtime::Handle::current();
+                        rt.spawn(async move {
+                            let new_config =
+                                crate::core::config::Config::load(None).unwrap_or_default();
+                            state.reset_for_restart(new_config).await;
+                            if let Err(e) = crate::core::run_server(state.clone()).await {
+                                tracing::error!(error=%e, "server start failed");
+                                state.set_server_state(ServerState::Error);
+                            }
+                        });
+                    }
+                    _ => {} // Starting/Stopping — ignore
+                }
+            }
             KeyCode::Char('r') => {
                 self.refresh_config();
                 self.files_dirty = true;
@@ -779,19 +812,24 @@ impl TuiApp {
         // Tab bar
         let titles: Vec<Line> = Tab::ALL.iter().map(|t| Line::from(t.title())).collect();
         let server_state = self.state.get_server_state();
-        let status_str = match server_state {
-            ServerState::Running => "Running",
-            ServerState::Stopped => "Stopped",
-            ServerState::Starting => "Starting",
-            ServerState::Stopping => "Stopping",
-            ServerState::Error => "Error",
+        let (status_str, status_color) = match server_state {
+            ServerState::Running => ("Running", Color::Green),
+            ServerState::Stopped => ("Stopped", Color::DarkGray),
+            ServerState::Starting => ("Starting", Color::Yellow),
+            ServerState::Stopping => ("Stopping", Color::Yellow),
+            ServerState::Error => ("Error", Color::Red),
         };
+        let title = Line::from(vec![
+            Span::raw(" Fry TFTP Server ["),
+            Span::styled(status_str, Style::default().fg(status_color).add_modifier(Modifier::BOLD)),
+            Span::raw("] "),
+        ]);
         let tabs = Tabs::new(titles)
             .select(self.current_tab.index())
             .block(
                 Block::default()
                     .borders(Borders::ALL)
-                    .title(format!(" Fry TFTP Server [{}] ", status_str)),
+                    .title(title),
             )
             .highlight_style(
                 Style::default()
@@ -856,18 +894,26 @@ impl TuiApp {
         }
     }
 
-    fn status_hint(&self) -> &str {
+    fn status_hint(&self) -> String {
         if self.config_editing.is_some() {
-            " Enter: save | Esc: cancel "
+            " Enter: save | Esc: cancel ".to_string()
         } else if matches!(
             self.acl_edit_mode,
             AclEditMode::Adding(..) | AclEditMode::Editing(..)
         ) {
-            " Tab: next field | Enter: save | Esc: cancel "
-        } else if self.current_tab == Tab::Acl {
-            " a: add | e: edit | d: delete | /: filter | q: quit | ?: help "
+            " Tab: next field | Enter: save | Esc: cancel ".to_string()
         } else {
-            " 1-6: tabs | j/k: scroll | /: filter | Enter: select | s: stop | r: reload | q: quit | ?: help "
+            let server_state = self.state.get_server_state();
+            let s_action = match server_state {
+                ServerState::Running => "s: stop",
+                ServerState::Stopped | ServerState::Error => "s: start",
+                _ => "s: ...",
+            };
+            if self.current_tab == Tab::Acl {
+                format!(" a: add | e: edit | d: delete | /: filter | {} | q: quit | ?: help ", s_action)
+            } else {
+                format!(" 1-7: tabs | j/k: scroll | /: filter | Enter: select | {} | r: reload | q: quit | ?: help ", s_action)
+            }
         }
     }
 
@@ -885,7 +931,12 @@ impl TuiApp {
 
         // Stats
         let config = self.state.config();
-        let uptime = format_duration_short(self.start_time.elapsed());
+        let server_state = self.state.get_server_state();
+        let uptime = if server_state == ServerState::Running {
+            format_duration_short(self.start_time.elapsed())
+        } else {
+            "0s".to_string()
+        };
         let total = self.state.total_sessions.load(Ordering::Relaxed);
         let errors = self.state.total_errors.load(Ordering::Relaxed);
         let tx = self.state.total_bytes_tx.load(Ordering::Relaxed);
@@ -1471,7 +1522,7 @@ impl TuiApp {
             ]),
             Line::from(vec![
                 Span::styled("  License: ", Style::default().fg(Color::Cyan)),
-                Span::raw("Proprietary"),
+                Span::raw("MIT"),
             ]),
             Line::from(""),
             Line::from(Span::styled(

@@ -1,6 +1,20 @@
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
+/// Log a message via tracing if initialized, otherwise fall back to eprintln.
+/// This is needed because Config::load() is called both at startup (before tracing)
+/// and at runtime (e.g. server restart from TUI/GUI where tracing is active).
+fn log_or_eprint(msg: String) {
+    use tracing::dispatcher;
+    dispatcher::get_default(|d| {
+        if d.is::<tracing::subscriber::NoSubscriber>() {
+            eprintln!("{}", msg);
+        } else {
+            tracing::info!("{}", msg);
+        }
+    });
+}
+
 /// Full server configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
@@ -315,19 +329,18 @@ impl Config {
                 let content = std::fs::read_to_string(&candidate)?;
                 let mut config: Config = toml::from_str(&content)?;
                 config.apply_env_overrides();
-                // tracing not yet initialized at load time, use eprintln
-                eprintln!("[config] loaded from {}", candidate.display());
+                log_or_eprint(format!("[config] loaded from {}", candidate.display()));
                 return Ok(config);
             }
         }
 
-        eprintln!("[config] no config file found, using defaults");
+        log_or_eprint("[config] no config file found, using defaults".to_string());
         let mut config = Config::default();
         config.apply_env_overrides();
         // Auto-create config file with defaults so GUI/TUI changes persist on next restart
         match config.save() {
-            Ok(path) => eprintln!("[config] created default config at {}", path.display()),
-            Err(e) => eprintln!("[config] could not create default config: {}", e),
+            Ok(path) => log_or_eprint(format!("[config] created default config at {}", path.display())),
+            Err(e) => log_or_eprint(format!("[config] could not create default config: {}", e)),
         }
         Ok(config)
     }
