@@ -44,9 +44,7 @@ impl LogState {
 }
 
 fn format_timestamp(ts: std::time::SystemTime) -> String {
-    let dur = ts
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap_or_default();
+    let dur = ts.duration_since(std::time::UNIX_EPOCH).unwrap_or_default();
     let total_secs = dur.as_secs();
     let hours = (total_secs % 86400) / 3600;
     let mins = (total_secs % 3600) / 60;
@@ -105,7 +103,11 @@ pub fn draw(ui: &mut Ui, log_state: &mut LogState, buffer: &LogBuffer, theme: &T
         }
 
         if ui.button("Copy All").clicked() {
-            let text = filtered_text(&log_state.entries, log_state.filter_level, &log_state.filter_text);
+            let text = filtered_text(
+                &log_state.entries,
+                log_state.filter_level,
+                &log_state.filter_text,
+            );
             match arboard::Clipboard::new().and_then(|mut cb| cb.set_text(text)) {
                 Ok(_) => log_state.copy_status = "Copied to clipboard".to_string(),
                 Err(e) => log_state.copy_status = format!("Copy failed: {}", e),
@@ -119,7 +121,11 @@ pub fn draw(ui: &mut Ui, log_state: &mut LogState, buffer: &LogBuffer, theme: &T
                 .set_file_name("server.log")
                 .save_file()
             {
-                let text = filtered_text(&log_state.entries, log_state.filter_level, &log_state.filter_text);
+                let text = filtered_text(
+                    &log_state.entries,
+                    log_state.filter_level,
+                    &log_state.filter_text,
+                );
                 match std::fs::write(&path, text) {
                     Ok(_) => log_state.copy_status = format!("Exported to {}", path.display()),
                     Err(e) => log_state.copy_status = format!("Export failed: {}", e),

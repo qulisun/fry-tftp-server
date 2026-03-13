@@ -196,8 +196,8 @@ fn parse_request(data: &[u8], is_rrq: bool) -> Result<Packet, ParseError> {
     // Validate filename: no null bytes, no control chars, no ..
     validate_filename(filename)?;
 
-    let mode_str =
-        std::str::from_utf8(strings[1]).map_err(|_| ParseError::Malformed("invalid mode encoding".to_string()))?;
+    let mode_str = std::str::from_utf8(strings[1])
+        .map_err(|_| ParseError::Malformed("invalid mode encoding".to_string()))?;
     let mode = TransferMode::from_str_ignore_case(mode_str)
         .ok_or_else(|| ParseError::UnknownMode(mode_str.to_string()))?;
 
@@ -283,7 +283,10 @@ fn parse_error(data: &[u8]) -> Result<Packet, ParseError> {
     let message = if data.len() > 4 {
         let msg_bytes = &data[4..];
         // Find null terminator
-        let end = msg_bytes.iter().position(|&b| b == 0).unwrap_or(msg_bytes.len());
+        let end = msg_bytes
+            .iter()
+            .position(|&b| b == 0)
+            .unwrap_or(msg_bytes.len());
         std::str::from_utf8(&msg_bytes[..end])
             .unwrap_or("invalid error message")
             .to_string()
@@ -371,7 +374,8 @@ fn serialize_request(
     mode: &TransferMode,
     options: &[TftpOption],
 ) -> BytesMut {
-    let mut buf = BytesMut::with_capacity(4 + filename.len() + mode.as_str().len() + options.len() * 20);
+    let mut buf =
+        BytesMut::with_capacity(4 + filename.len() + mode.as_str().len() + options.len() * 20);
     buf.put_u16(opcode);
     buf.put_slice(filename.as_bytes());
     buf.put_u8(0);

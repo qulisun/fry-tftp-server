@@ -87,8 +87,7 @@ fn is_valid_cidr_input(source: &str) -> bool {
     if source.is_empty() {
         return false;
     }
-    source.parse::<ipnet::IpNet>().is_ok()
-        || source.parse::<std::net::IpAddr>().is_ok()
+    source.parse::<ipnet::IpNet>().is_ok() || source.parse::<std::net::IpAddr>().is_ok()
 }
 
 /// Column widths computed from available width.
@@ -359,10 +358,8 @@ pub fn draw(ui: &mut Ui, state: &Arc<AppState>, acl: &mut AclState) {
                     // Alternate row background
                     if i % 2 == 1 {
                         let rect = ui.available_rect_before_wrap();
-                        let row_rect = egui::Rect::from_min_size(
-                            rect.min,
-                            egui::vec2(total_width, 24.0),
-                        );
+                        let row_rect =
+                            egui::Rect::from_min_size(rect.min, egui::vec2(total_width, 24.0));
                         ui.painter().rect_filled(
                             row_rect,
                             0.0,

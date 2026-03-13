@@ -10,8 +10,8 @@ pub mod windows_service;
 #[cfg(windows)]
 pub mod windows_eventlog;
 
-use std::sync::Arc;
 use crate::core::state::AppState;
+use std::sync::Arc;
 
 /// Register platform-specific signal handlers for graceful shutdown and config reload
 pub async fn register_signals(

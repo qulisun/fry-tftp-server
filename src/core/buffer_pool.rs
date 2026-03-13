@@ -3,8 +3,8 @@
 //! Reduces allocator pressure by recycling `Vec<u8>` buffers between sessions.
 //! Uses a simple `Mutex<Vec>` which is sufficient for typical concurrency (~100 sessions).
 
-use std::sync::Mutex;
 use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::Mutex;
 
 /// A lock-based buffer pool for reusing packet buffers across sessions.
 pub struct BufferPool {

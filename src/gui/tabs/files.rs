@@ -79,13 +79,12 @@ pub fn draw(ui: &mut Ui, _state: &Arc<AppState>, files: &mut FilesState) {
                 files.refresh();
             }
         }
-        if files.current_root.parent().is_some()
-            && ui.button("Up").clicked() {
-                if let Some(parent) = files.current_root.parent() {
-                    files.current_root = parent.to_path_buf();
-                    files.needs_refresh = true;
-                }
+        if files.current_root.parent().is_some() && ui.button("Up").clicked() {
+            if let Some(parent) = files.current_root.parent() {
+                files.current_root = parent.to_path_buf();
+                files.needs_refresh = true;
             }
+        }
     });
 
     ui.separator();

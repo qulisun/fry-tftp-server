@@ -184,7 +184,6 @@ fn default_log_file() -> String {
     }
 }
 
-
 impl Default for ServerConfig {
     fn default() -> Self {
         Self {
@@ -284,7 +283,11 @@ pub fn parse_size(s: &str) -> Option<u64> {
     } else {
         (s, 1u64) // plain number = bytes
     };
-    num_part.trim().parse::<u64>().ok().map(|n| n.saturating_mul(unit))
+    num_part
+        .trim()
+        .parse::<u64>()
+        .ok()
+        .map(|n| n.saturating_mul(unit))
 }
 
 impl FilesystemConfig {
@@ -350,7 +353,9 @@ impl Config {
 
     /// Return the first existing config file path (used for file watching)
     pub fn config_file_path() -> Option<PathBuf> {
-        Self::default_config_paths().into_iter().find(|p| p.exists())
+        Self::default_config_paths()
+            .into_iter()
+            .find(|p| p.exists())
     }
 
     fn default_config_paths() -> Vec<PathBuf> {
@@ -366,9 +371,7 @@ impl Config {
         #[cfg(target_os = "macos")]
         {
             if let Some(home) = dirs::home_dir() {
-                paths.push(
-                    home.join("Library/Preferences/fry-tftp-server/config.toml"),
-                );
+                paths.push(home.join("Library/Preferences/fry-tftp-server/config.toml"));
             }
         }
 
@@ -388,7 +391,9 @@ impl Config {
     /// Apply environment variable overrides (priority: CLI > env > file > defaults)
     pub fn apply_env_overrides(&mut self) {
         if let Ok(v) = std::env::var("TFTP_SERVER_PORT") {
-            if let Ok(p) = v.parse() { self.server.port = p; }
+            if let Ok(p) = v.parse() {
+                self.server.port = p;
+            }
         }
         if let Ok(v) = std::env::var("TFTP_SERVER_BIND_ADDRESS") {
             self.server.bind_address = v;
@@ -406,7 +411,9 @@ impl Config {
             self.protocol.allow_write = v == "true" || v == "1";
         }
         if let Ok(v) = std::env::var("TFTP_SERVER_MAX_SESSIONS") {
-            if let Ok(n) = v.parse() { self.session.max_sessions = n; }
+            if let Ok(n) = v.parse() {
+                self.session.max_sessions = n;
+            }
         }
         if let Ok(v) = std::env::var("TFTP_SERVER_IP_VERSION") {
             self.network.ip_version = v;

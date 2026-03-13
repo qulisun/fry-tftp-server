@@ -6,8 +6,8 @@
 //!
 //! Commands: `reload`, `stop`, `status`
 
-use std::sync::Arc;
 use std::sync::atomic::Ordering;
+use std::sync::Arc;
 
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::sync::Semaphore;
@@ -50,27 +50,25 @@ fn handle_command(cmd: &str, state: &Arc<AppState>) -> String {
     let cmd = cmd.trim();
     match cmd {
         "status" => build_status_json(state),
-        "reload" => {
-            match Config::load(None) {
-                Ok(new_config) => {
-                    state.config.store(Arc::new(new_config));
-                    tracing::info!("config reloaded via IPC");
-                    r#"{"ok":true,"message":"config reloaded"}"#.to_string()
-                }
-                Err(e) => {
-                    tracing::error!(error=%e, "IPC reload failed");
-                    serde_json::json!({"ok": false, "error": format!("config reload failed: {}", e)}).to_string()
-                }
+        "reload" => match Config::load(None) {
+            Ok(new_config) => {
+                state.config.store(Arc::new(new_config));
+                tracing::info!("config reloaded via IPC");
+                r#"{"ok":true,"message":"config reloaded"}"#.to_string()
             }
-        }
+            Err(e) => {
+                tracing::error!(error=%e, "IPC reload failed");
+                serde_json::json!({"ok": false, "error": format!("config reload failed: {}", e)})
+                    .to_string()
+            }
+        },
         "stop" => {
             tracing::info!("shutdown requested via IPC");
             state.cancel_shutdown();
             r#"{"ok":true,"message":"shutdown initiated"}"#.to_string()
         }
-        _ => {
-            serde_json::json!({"ok": false, "error": format!("unknown command: {}", cmd)}).to_string()
-        }
+        _ => serde_json::json!({"ok": false, "error": format!("unknown command: {}", cmd)})
+            .to_string(),
     }
 }
 

@@ -60,7 +60,11 @@ fn sort_header(
     ascending: bool,
 ) -> bool {
     let arrow = if current == col {
-        if ascending { " [A]" } else { " [D]" }
+        if ascending {
+            " [A]"
+        } else {
+            " [D]"
+        }
     } else {
         ""
     };
@@ -119,7 +123,8 @@ fn export_csv(records: &[&TransferRecord]) {
         .set_file_name("transfers.csv")
         .save_file()
     {
-        let mut csv = String::from("Client,File,Direction,Bytes,Duration_ms,Speed_Mbps,Status,Retransmits\n");
+        let mut csv =
+            String::from("Client,File,Direction,Bytes,Duration_ms,Speed_Mbps,Status,Retransmits\n");
         for r in records {
             let dir = match r.direction {
                 Direction::Read => "Download",
@@ -133,8 +138,14 @@ fn export_csv(records: &[&TransferRecord]) {
             };
             csv.push_str(&format!(
                 "{},{},{},{},{},{:.2},{},{}\n",
-                r.client_addr, r.filename, dir, r.bytes_transferred,
-                r.duration_ms, r.speed_mbps, status, r.retransmits
+                r.client_addr,
+                r.filename,
+                dir,
+                r.bytes_transferred,
+                r.duration_ms,
+                r.speed_mbps,
+                status,
+                r.retransmits
             ));
         }
         if let Err(e) = std::fs::write(&path, csv) {
@@ -162,11 +173,7 @@ pub fn draw(ui: &mut Ui, history: &[TransferRecord], transfers: &mut TransfersSt
                     "completed".to_string(),
                     "Completed",
                 );
-                ui.selectable_value(
-                    &mut transfers.filter_status,
-                    "failed".to_string(),
-                    "Failed",
-                );
+                ui.selectable_value(&mut transfers.filter_status, "failed".to_string(), "Failed");
             });
     });
 
@@ -176,7 +183,11 @@ pub fn draw(ui: &mut Ui, history: &[TransferRecord], transfers: &mut TransfersSt
         .iter()
         .filter(|r| {
             if !transfers.filter_ip.is_empty()
-                && !r.client_addr.ip().to_string().contains(&transfers.filter_ip)
+                && !r
+                    .client_addr
+                    .ip()
+                    .to_string()
+                    .contains(&transfers.filter_ip)
             {
                 return false;
             }
@@ -198,35 +209,70 @@ pub fn draw(ui: &mut Ui, history: &[TransferRecord], transfers: &mut TransfersSt
     match transfers.sort_column {
         SortColumn::Client => filtered.sort_by(|a, b| {
             let c = a.client_addr.to_string().cmp(&b.client_addr.to_string());
-            if asc { c } else { c.reverse() }
+            if asc {
+                c
+            } else {
+                c.reverse()
+            }
         }),
         SortColumn::File => filtered.sort_by(|a, b| {
             let c = a.filename.cmp(&b.filename);
-            if asc { c } else { c.reverse() }
+            if asc {
+                c
+            } else {
+                c.reverse()
+            }
         }),
         SortColumn::Direction => filtered.sort_by(|a, b| {
             let c = (a.direction as u8).cmp(&(b.direction as u8));
-            if asc { c } else { c.reverse() }
+            if asc {
+                c
+            } else {
+                c.reverse()
+            }
         }),
         SortColumn::Size => filtered.sort_by(|a, b| {
             let c = a.bytes_transferred.cmp(&b.bytes_transferred);
-            if asc { c } else { c.reverse() }
+            if asc {
+                c
+            } else {
+                c.reverse()
+            }
         }),
         SortColumn::Duration => filtered.sort_by(|a, b| {
             let c = a.duration_ms.cmp(&b.duration_ms);
-            if asc { c } else { c.reverse() }
+            if asc {
+                c
+            } else {
+                c.reverse()
+            }
         }),
         SortColumn::Speed => filtered.sort_by(|a, b| {
-            let c = a.speed_mbps.partial_cmp(&b.speed_mbps).unwrap_or(std::cmp::Ordering::Equal);
-            if asc { c } else { c.reverse() }
+            let c = a
+                .speed_mbps
+                .partial_cmp(&b.speed_mbps)
+                .unwrap_or(std::cmp::Ordering::Equal);
+            if asc {
+                c
+            } else {
+                c.reverse()
+            }
         }),
         SortColumn::Status => filtered.sort_by(|a, b| {
             let c = (a.status as u8).cmp(&(b.status as u8));
-            if asc { c } else { c.reverse() }
+            if asc {
+                c
+            } else {
+                c.reverse()
+            }
         }),
         SortColumn::Retransmits => filtered.sort_by(|a, b| {
             let c = a.retransmits.cmp(&b.retransmits);
-            if asc { c } else { c.reverse() }
+            if asc {
+                c
+            } else {
+                c.reverse()
+            }
         }),
     }
 
@@ -256,7 +302,13 @@ pub fn draw(ui: &mut Ui, history: &[TransferRecord], transfers: &mut TransfersSt
                     ("Retransmits", SortColumn::Retransmits),
                 ];
                 for (label, col) in &cols {
-                    if sort_header(ui, label, *col, transfers.sort_column, transfers.sort_ascending) {
+                    if sort_header(
+                        ui,
+                        label,
+                        *col,
+                        transfers.sort_column,
+                        transfers.sort_ascending,
+                    ) {
                         if transfers.sort_column == *col {
                             transfers.sort_ascending = !transfers.sort_ascending;
                         } else {

@@ -217,7 +217,8 @@ impl AppState {
         self.config.store(Arc::new(new_config));
 
         // Replace shutdown token with a fresh one
-        self.shutdown_token.store(Arc::new(CancellationToken::new()));
+        self.shutdown_token
+            .store(Arc::new(CancellationToken::new()));
 
         // Set state to Starting
         self.set_server_state(ServerState::Starting);
@@ -263,7 +264,10 @@ impl AppState {
     /// Count active sessions for an IP
     pub async fn count_sessions_by_ip(&self, ip: IpAddr) -> usize {
         let sessions = self.active_sessions.read().await;
-        sessions.values().filter(|s| s.client_addr.ip() == ip).count()
+        sessions
+            .values()
+            .filter(|s| s.client_addr.ip() == ip)
+            .count()
     }
 
     /// Count total active sessions

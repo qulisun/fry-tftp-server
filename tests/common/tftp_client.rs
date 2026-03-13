@@ -110,7 +110,8 @@ impl TftpTestClient {
 
     /// GET a file from the server (no options).
     pub async fn get(&self, filename: &str) -> Result<Vec<u8>, String> {
-        self.get_with_options(filename, &TftpOptions::default()).await
+        self.get_with_options(filename, &TftpOptions::default())
+            .await
     }
 
     /// GET a file from the server with options. Returns (data, negotiated_options).
@@ -127,11 +128,17 @@ impl TftpTestClient {
         if opts.has_options() {
             let pkt = self.recv_packet(self.recv_timeout).await?;
             match pkt {
-                ReceivedPacket { packet: Packet::Oack { .. }, from } => {
+                ReceivedPacket {
+                    packet: Packet::Oack { .. },
+                    from,
+                } => {
                     // ACK(0) to confirm OACK
                     self.send_ack_to(0, from).await?;
                 }
-                ReceivedPacket { packet: Packet::Data { block: 1, data }, from } => {
+                ReceivedPacket {
+                    packet: Packet::Data { block: 1, data },
+                    from,
+                } => {
                     // Server might skip OACK if no options accepted — handle inline
                     let is_last = data.len() < blksize;
                     self.send_ack_to(1, from).await?;
@@ -141,7 +148,10 @@ impl TftpTestClient {
                     // Continue receiving from block 2
                     return self.recv_data_blocks(2, blksize, data, from).await;
                 }
-                ReceivedPacket { packet: Packet::Error { code, message }, .. } => {
+                ReceivedPacket {
+                    packet: Packet::Error { code, message },
+                    ..
+                } => {
                     return Err(format!("server error {:?}: {}", code, message));
                 }
                 other => return Err(format!("expected OACK or DATA(1), got {:?}", other.packet)),
@@ -151,7 +161,10 @@ impl TftpTestClient {
         // Receive DATA blocks
         let first = self.recv_packet(self.recv_timeout).await?;
         match first {
-            ReceivedPacket { packet: Packet::Data { block: 1, data }, from } => {
+            ReceivedPacket {
+                packet: Packet::Data { block: 1, data },
+                from,
+            } => {
                 let is_last = data.len() < blksize;
                 self.send_ack_to(1, from).await?;
                 if is_last {
@@ -159,9 +172,10 @@ impl TftpTestClient {
                 }
                 self.recv_data_blocks(2, blksize, data, from).await
             }
-            ReceivedPacket { packet: Packet::Error { code, message }, .. } => {
-                Err(format!("server error {:?}: {}", code, message))
-            }
+            ReceivedPacket {
+                packet: Packet::Error { code, message },
+                ..
+            } => Err(format!("server error {:?}: {}", code, message)),
             other => Err(format!("expected DATA(1), got {:?}", other.packet)),
         }
     }
@@ -206,7 +220,11 @@ impl TftpTestClient {
 
         for i in 0..total_chunks {
             let block = (i + 1) as u16;
-            let chunk = if data.is_empty() { &[] as &[u8] } else { chunks[i] };
+            let chunk = if data.is_empty() {
+                &[] as &[u8]
+            } else {
+                chunks[i]
+            };
             self.send_data_to(block, chunk, from).await?;
 
             let ack = self.recv_packet(self.recv_timeout).await?;
@@ -317,7 +335,10 @@ impl TftpTestClient {
     }
 
     /// Try to receive a packet, returning None on timeout.
-    pub async fn try_recv_packet(&self, timeout: Duration) -> Result<Option<ReceivedPacket>, String> {
+    pub async fn try_recv_packet(
+        &self,
+        timeout: Duration,
+    ) -> Result<Option<ReceivedPacket>, String> {
         let mut buf = vec![0u8; 65536];
         match tokio::time::timeout(timeout, self.socket.recv_from(&mut buf)).await {
             Ok(Ok((len, from))) => {
@@ -494,11 +515,7 @@ pub async fn mini_server_multi(
     root: PathBuf,
     max_requests: usize,
     config_override: impl FnOnce(&mut Config),
-) -> (
-    SocketAddr,
-    Arc<AppState>,
-    tokio::task::JoinHandle<()>,
-) {
+) -> (SocketAddr, Arc<AppState>, tokio::task::JoinHandle<()>) {
     let mut config = Config::default();
     config.server.port = 0;
     config.server.root = root;
@@ -515,11 +532,9 @@ pub async fn mini_server_multi(
     let handle = tokio::spawn(async move {
         let mut buf = vec![0u8; 65536];
         for _ in 0..max_requests {
-            let result = tokio::time::timeout(
-                Duration::from_secs(30),
-                server_socket.recv_from(&mut buf),
-            )
-            .await;
+            let result =
+                tokio::time::timeout(Duration::from_secs(30), server_socket.recv_from(&mut buf))
+                    .await;
             let (len, client_addr) = match result {
                 Ok(Ok(v)) => v,
                 _ => break,

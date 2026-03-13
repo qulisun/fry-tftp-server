@@ -306,9 +306,7 @@ async fn spawn_config_watcher(
     )?;
 
     // Watch the parent directory (some editors delete+recreate files)
-    let watch_dir = config_path
-        .parent()
-        .unwrap_or(std::path::Path::new("."));
+    let watch_dir = config_path.parent().unwrap_or(std::path::Path::new("."));
     watcher.watch(watch_dir.as_ref(), RecursiveMode::NonRecursive)?;
 
     // Process events in a blocking thread since mpsc::Receiver is blocking
@@ -331,10 +329,8 @@ async fn spawn_config_watcher(
                             .unwrap_or(false)
                     });
 
-                    let is_modify = matches!(
-                        event.kind,
-                        EventKind::Modify(_) | EventKind::Create(_)
-                    );
+                    let is_modify =
+                        matches!(event.kind, EventKind::Modify(_) | EventKind::Create(_));
 
                     if dominated_by_config && is_modify {
                         let now = std::time::Instant::now();

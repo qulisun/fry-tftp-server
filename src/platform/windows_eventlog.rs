@@ -13,8 +13,8 @@ use tracing_subscriber::registry::LookupSpan;
 
 use windows_sys::Win32::Foundation::HANDLE;
 use windows_sys::Win32::System::EventLog::{
-    DeregisterEventSource, RegisterEventSourceW, ReportEventW,
-    EVENTLOG_ERROR_TYPE, EVENTLOG_INFORMATION_TYPE, EVENTLOG_WARNING_TYPE,
+    DeregisterEventSource, RegisterEventSourceW, ReportEventW, EVENTLOG_ERROR_TYPE,
+    EVENTLOG_INFORMATION_TYPE, EVENTLOG_WARNING_TYPE,
 };
 
 /// A tracing layer that writes events to the Windows Event Log.

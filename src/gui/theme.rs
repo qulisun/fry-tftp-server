@@ -30,12 +30,14 @@ impl Theme {
                 // Inactive widgets — slightly lighter than background so buttons are visible
                 visuals.widgets.inactive.bg_fill = Color32::from_rgb(0x38, 0x38, 0x38);
                 visuals.widgets.inactive.weak_bg_fill = Color32::from_rgb(0x38, 0x38, 0x38);
-                visuals.widgets.inactive.bg_stroke = Stroke::new(1.0, Color32::from_rgb(0x45, 0x45, 0x45));
+                visuals.widgets.inactive.bg_stroke =
+                    Stroke::new(1.0, Color32::from_rgb(0x45, 0x45, 0x45));
 
                 // Hovered widgets — brighter highlight
                 visuals.widgets.hovered.bg_fill = Color32::from_rgb(0x48, 0x48, 0x48);
                 visuals.widgets.hovered.weak_bg_fill = Color32::from_rgb(0x48, 0x48, 0x48);
-                visuals.widgets.hovered.bg_stroke = Stroke::new(1.0, Color32::from_rgb(0x58, 0x58, 0x58));
+                visuals.widgets.hovered.bg_stroke =
+                    Stroke::new(1.0, Color32::from_rgb(0x58, 0x58, 0x58));
 
                 // Active/selected widgets — brightest
                 visuals.widgets.active.bg_fill = Color32::from_rgb(0x50, 0x50, 0x50);

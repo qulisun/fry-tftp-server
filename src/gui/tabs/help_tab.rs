@@ -46,7 +46,9 @@ pub fn draw(ui: &mut Ui, help: &mut HelpState) {
 
                 ui.label("RFC 1350");
                 ui.label("TFTP Protocol (Revision 2)");
-                ui.label("Base protocol: RRQ, WRQ, DATA, ACK, ERROR opcodes, octet and netascii modes");
+                ui.label(
+                    "Base protocol: RRQ, WRQ, DATA, ACK, ERROR opcodes, octet and netascii modes",
+                );
                 ui.end_row();
 
                 ui.label("RFC 2347");

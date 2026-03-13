@@ -14,8 +14,8 @@ pub async fn register_signals(shutdown_token: CancellationToken) {
     // Ctrl+Break — immediate shutdown via native console handler
     let token = shutdown_token.clone();
     tokio::spawn(async move {
-        let mut break_signal = tokio::signal::windows::ctrl_break()
-            .expect("failed to install Ctrl+Break handler");
+        let mut break_signal =
+            tokio::signal::windows::ctrl_break().expect("failed to install Ctrl+Break handler");
         break_signal.recv().await;
         tracing::warn!("received Ctrl+Break, immediate shutdown");
         token.cancel();

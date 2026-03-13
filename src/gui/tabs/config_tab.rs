@@ -89,10 +89,14 @@ impl ConfigState {
             .map_err(|_| "Invalid max log lines")?;
 
         config.protocol.allow_write = self.allow_write;
-        config.protocol.default_blksize =
-            self.default_blksize.parse().map_err(|_| "Invalid blksize")?;
-        config.protocol.max_blksize =
-            self.max_blksize.parse().map_err(|_| "Invalid max blksize")?;
+        config.protocol.default_blksize = self
+            .default_blksize
+            .parse()
+            .map_err(|_| "Invalid blksize")?;
+        config.protocol.max_blksize = self
+            .max_blksize
+            .parse()
+            .map_err(|_| "Invalid max blksize")?;
         config.protocol.default_windowsize = self
             .default_windowsize
             .parse()
@@ -101,8 +105,10 @@ impl ConfigState {
             .max_windowsize
             .parse()
             .map_err(|_| "Invalid max windowsize")?;
-        config.protocol.default_timeout =
-            self.default_timeout.parse().map_err(|_| "Invalid timeout")?;
+        config.protocol.default_timeout = self
+            .default_timeout
+            .parse()
+            .map_err(|_| "Invalid timeout")?;
 
         config.session.max_sessions = self
             .max_sessions
@@ -148,9 +154,11 @@ pub fn draw(ui: &mut Ui, state: &Arc<AppState>, cs: &mut ConfigState) {
     egui::ScrollArea::vertical().show(ui, |ui| {
         ui.collapsing("Server", |ui| {
             ui.label(
-                egui::RichText::new("* Port, Bind Address and IP Version require restart to take effect")
-                    .small()
-                    .weak(),
+                egui::RichText::new(
+                    "* Port, Bind Address and IP Version require restart to take effect",
+                )
+                .small()
+                .weak(),
             );
             egui::Grid::new("server_cfg").show(ui, |ui| {
                 ui.label("Port *:");
@@ -361,10 +369,8 @@ pub fn draw(ui: &mut Ui, state: &Arc<AppState>, cs: &mut ConfigState) {
                             );
                         }
                         Err(e) => {
-                            cs.status_message = format!(
-                                "Config applied (save failed: {}){}",
-                                e, restart_note
-                            );
+                            cs.status_message =
+                                format!("Config applied (save failed: {}){}", e, restart_note);
                         }
                     }
                 }
@@ -395,8 +401,10 @@ pub fn draw(ui: &mut Ui, state: &Arc<AppState>, cs: &mut ConfigState) {
                         Ok(imported) => {
                             *cs = ConfigState::from_config(&imported);
                             cs.dirty = true;
-                            cs.status_message =
-                                format!("Imported from {} (click Apply to activate)", path.display());
+                            cs.status_message = format!(
+                                "Imported from {} (click Apply to activate)",
+                                path.display()
+                            );
                         }
                         Err(e) => {
                             cs.status_message = format!("Parse error: {}", e);

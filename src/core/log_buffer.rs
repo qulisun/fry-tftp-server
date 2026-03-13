@@ -216,10 +216,7 @@ fn truncate_single_file(path: &PathBuf, max_lines: usize) {
 
     // Keep only the last max_lines
     let start = lines.len() - max_lines;
-    let truncated: String = lines[start..]
-        .iter()
-        .map(|l| format!("{}\n", l))
-        .collect();
+    let truncated: String = lines[start..].iter().map(|l| format!("{}\n", l)).collect();
 
     if let Err(e) = std::fs::write(path, truncated) {
         tracing::warn!(path=%path.display(), error=%e, "failed to truncate log file");

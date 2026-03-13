@@ -8,7 +8,8 @@ use ratatui::layout::{Constraint, Direction as LayoutDirection, Layout, Rect};
 use ratatui::style::{Color, Modifier, Style};
 use ratatui::text::{Line, Span};
 use ratatui::widgets::{
-    Block, Borders, Cell, Clear, List, ListItem, ListState, Paragraph, Row, Sparkline, Table, Tabs, Wrap,
+    Block, Borders, Cell, Clear, List, ListItem, ListState, Paragraph, Row, Sparkline, Table, Tabs,
+    Wrap,
 };
 use ratatui::Frame;
 
@@ -126,9 +127,7 @@ fn log_level_color(level: &tracing::Level) -> Color {
 }
 
 fn format_log_time(ts: std::time::SystemTime) -> String {
-    let dur = ts
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap_or_default();
+    let dur = ts.duration_since(std::time::UNIX_EPOCH).unwrap_or_default();
     let s = dur.as_secs();
     format!(
         "{:02}:{:02}:{:02}",
@@ -451,12 +450,17 @@ impl TuiApp {
     }
 
     fn save_acl_rule(&self, idx: Option<usize>, rule: &AclRuleEdit) {
-        use crate::core::config::{AclRuleConfig};
+        use crate::core::config::AclRuleConfig;
         let mut cfg = (*self.state.config()).clone();
         let new_rule = AclRuleConfig {
             action: rule.action.clone(),
             source: rule.source.clone(),
-            operations: rule.operations.split(',').map(|s| s.trim().to_string()).filter(|s| !s.is_empty()).collect(),
+            operations: rule
+                .operations
+                .split(',')
+                .map(|s| s.trim().to_string())
+                .filter(|s| !s.is_empty())
+                .collect(),
             comment: rule.comment.clone(),
         };
         match idx {
@@ -491,7 +495,9 @@ impl TuiApp {
                     // Keep filter_text active for display
                 }
                 KeyCode::Char(c) => self.filter_text.push(c),
-                KeyCode::Backspace => { self.filter_text.pop(); }
+                KeyCode::Backspace => {
+                    self.filter_text.pop();
+                }
                 _ => {}
             }
             return false;
@@ -506,14 +512,18 @@ impl TuiApp {
                 }
                 KeyCode::Tab => {
                     match &mut self.acl_edit_mode {
-                        AclEditMode::Adding(_, field) | AclEditMode::Editing(_, _, field) => *field = (*field + 1) % 4,
+                        AclEditMode::Adding(_, field) | AclEditMode::Editing(_, _, field) => {
+                            *field = (*field + 1) % 4
+                        }
                         _ => {}
                     }
                     return false;
                 }
                 KeyCode::BackTab => {
                     match &mut self.acl_edit_mode {
-                        AclEditMode::Adding(_, field) | AclEditMode::Editing(_, _, field) => *field = (*field + 3) % 4,
+                        AclEditMode::Adding(_, field) | AclEditMode::Editing(_, _, field) => {
+                            *field = (*field + 3) % 4
+                        }
                         _ => {}
                     }
                     return false;
@@ -744,7 +754,9 @@ impl TuiApp {
 
     fn matches_filter(&self, text: &str) -> bool {
         self.filter_text.is_empty()
-            || text.to_lowercase().contains(&self.filter_text.to_lowercase())
+            || text
+                .to_lowercase()
+                .contains(&self.filter_text.to_lowercase())
     }
 
     // ─── Render ──────────────────────────────────────────────────────────────
@@ -758,9 +770,9 @@ impl TuiApp {
         let chunks = Layout::default()
             .direction(LayoutDirection::Vertical)
             .constraints([
-                Constraint::Length(3),               // tabs
-                Constraint::Min(0),                  // content
-                Constraint::Length(bottom_height),    // status + filter
+                Constraint::Length(3),             // tabs
+                Constraint::Min(0),                // content
+                Constraint::Length(bottom_height), // status + filter
             ])
             .split(frame.area());
 
@@ -816,11 +828,13 @@ impl TuiApp {
             frame.render_widget(filter_bar, bar_chunks[0]);
 
             let hint = self.status_hint();
-            let bar = Paragraph::new(hint).style(Style::default().bg(Color::DarkGray).fg(Color::White));
+            let bar =
+                Paragraph::new(hint).style(Style::default().bg(Color::DarkGray).fg(Color::White));
             frame.render_widget(bar, bar_chunks[1]);
         } else {
             let hint = self.status_hint();
-            let bar = Paragraph::new(hint).style(Style::default().bg(Color::DarkGray).fg(Color::White));
+            let bar =
+                Paragraph::new(hint).style(Style::default().bg(Color::DarkGray).fg(Color::White));
             frame.render_widget(bar, chunks[2]);
         }
 
@@ -845,7 +859,10 @@ impl TuiApp {
     fn status_hint(&self) -> &str {
         if self.config_editing.is_some() {
             " Enter: save | Esc: cancel "
-        } else if matches!(self.acl_edit_mode, AclEditMode::Adding(..) | AclEditMode::Editing(..)) {
+        } else if matches!(
+            self.acl_edit_mode,
+            AclEditMode::Adding(..) | AclEditMode::Editing(..)
+        ) {
             " Tab: next field | Enter: save | Esc: cancel "
         } else if self.current_tab == Tab::Acl {
             " a: add | e: edit | d: delete | /: filter | q: quit | ?: help "
@@ -862,7 +879,7 @@ impl TuiApp {
             .constraints([
                 Constraint::Length(5), // stats
                 Constraint::Length(4), // sparklines
-                Constraint::Min(0),   // active transfers
+                Constraint::Min(0),    // active transfers
             ])
             .split(area);
 
@@ -896,10 +913,18 @@ impl TuiApp {
                 Span::styled(errors.to_string(), Style::default().fg(Color::Red)),
                 Span::raw("  "),
                 Span::styled("TX: ", Style::default().fg(Color::DarkGray)),
-                Span::raw(format!("{} ({})", format_bytes(tx), format_rate(self.cur_tx_rate))),
+                Span::raw(format!(
+                    "{} ({})",
+                    format_bytes(tx),
+                    format_rate(self.cur_tx_rate)
+                )),
                 Span::raw("  "),
                 Span::styled("RX: ", Style::default().fg(Color::DarkGray)),
-                Span::raw(format!("{} ({})", format_bytes(rx), format_rate(self.cur_rx_rate))),
+                Span::raw(format!(
+                    "{} ({})",
+                    format_bytes(rx),
+                    format_rate(self.cur_rx_rate)
+                )),
             ]),
         ];
         let stats = Paragraph::new(stats_text)
@@ -948,7 +973,9 @@ impl TuiApp {
 
         let rows: Vec<Row> = sessions
             .iter()
-            .filter(|s| self.matches_filter(&s.filename) || self.matches_filter(&s.client_addr.to_string()))
+            .filter(|s| {
+                self.matches_filter(&s.filename) || self.matches_filter(&s.client_addr.to_string())
+            })
             .map(|s| {
                 let dir = match s.direction {
                     Direction::Read => "DL",
@@ -992,13 +1019,11 @@ impl TuiApp {
             Constraint::Length(12),
             Constraint::Length(8),
         ];
-        let table = Table::new(rows, widths)
-            .header(header)
-            .block(
-                Block::default()
-                    .borders(Borders::ALL)
-                    .title(format!(" Active Transfers ({}) ", sessions.len())),
-            );
+        let table = Table::new(rows, widths).header(header).block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title(format!(" Active Transfers ({}) ", sessions.len())),
+        );
         frame.render_widget(table, chunks[2]);
     }
 
@@ -1030,15 +1055,15 @@ impl TuiApp {
             .collect();
 
         let list = List::new(items)
-            .block(
-                Block::default()
-                    .borders(Borders::ALL)
-                    .title(format!(
-                        " Files: {} (Esc: up, Enter: open) ",
-                        self.files_root.display()
-                    )),
-            )
-            .highlight_style(Style::default().bg(Color::DarkGray).add_modifier(Modifier::BOLD));
+            .block(Block::default().borders(Borders::ALL).title(format!(
+                " Files: {} (Esc: up, Enter: open) ",
+                self.files_root.display()
+            )))
+            .highlight_style(
+                Style::default()
+                    .bg(Color::DarkGray)
+                    .add_modifier(Modifier::BOLD),
+            );
 
         let mut list_state = ListState::default();
         list_state.select(Some(self.files_scroll));
@@ -1063,7 +1088,9 @@ impl TuiApp {
         let rows: Vec<Row> = history
             .iter()
             .rev()
-            .filter(|r| self.matches_filter(&r.filename) || self.matches_filter(&r.client_addr.to_string()))
+            .filter(|r| {
+                self.matches_filter(&r.filename) || self.matches_filter(&r.client_addr.to_string())
+            })
             .map(|r| {
                 let dir = match r.direction {
                     Direction::Read => "DL",
@@ -1116,8 +1143,18 @@ impl TuiApp {
     fn render_log(&mut self, frame: &mut Frame, area: Rect) {
         let height = area.height.saturating_sub(2) as usize;
 
-        let filtered: Vec<&LogEntry> = self.log_entries.iter()
-            .filter(|e| self.filter_text.is_empty() || e.message.to_lowercase().contains(&self.filter_text.to_lowercase()) || e.target.to_lowercase().contains(&self.filter_text.to_lowercase()))
+        let filtered: Vec<&LogEntry> = self
+            .log_entries
+            .iter()
+            .filter(|e| {
+                self.filter_text.is_empty()
+                    || e.message
+                        .to_lowercase()
+                        .contains(&self.filter_text.to_lowercase())
+                    || e.target
+                        .to_lowercase()
+                        .contains(&self.filter_text.to_lowercase())
+            })
             .collect();
 
         if self.log_auto_scroll && !filtered.is_empty() {
@@ -1145,16 +1182,14 @@ impl TuiApp {
             })
             .collect();
 
-        let auto = if self.log_auto_scroll { "auto" } else { "manual" };
-        let log = Paragraph::new(visible).block(
-            Block::default()
-                .borders(Borders::ALL)
-                .title(format!(
-                    " Log ({} entries, scroll: {}) ",
-                    filtered.len(),
-                    auto
-                )),
-        );
+        let auto = if self.log_auto_scroll {
+            "auto"
+        } else {
+            "manual"
+        };
+        let log = Paragraph::new(visible).block(Block::default().borders(Borders::ALL).title(
+            format!(" Log ({} entries, scroll: {}) ", filtered.len(), auto),
+        ));
         frame.render_widget(log, area);
     }
 
@@ -1240,29 +1275,39 @@ impl TuiApp {
 
     // ─── ACL Edit Popup ──────────────────────────────────────────────────────
 
-    fn render_acl_edit_popup(&self, frame: &mut Frame, title: &str, rule: &AclRuleEdit, active_field: usize) {
+    fn render_acl_edit_popup(
+        &self,
+        frame: &mut Frame,
+        title: &str,
+        rule: &AclRuleEdit,
+        active_field: usize,
+    ) {
         let area = centered_rect(60, 40, frame.area());
         frame.render_widget(Clear, area);
 
         let fields = ["Action", "Source (CIDR)", "Operations", "Comment"];
         let values = [&rule.action, &rule.source, &rule.operations, &rule.comment];
 
-        let mut lines = vec![
-            Line::from(format!(" {}", title)),
-            Line::from(""),
-        ];
+        let mut lines = vec![Line::from(format!(" {}", title)), Line::from("")];
 
         for (i, (field, val)) in fields.iter().zip(values.iter()).enumerate() {
             let marker = if i == active_field { ">" } else { " " };
             let cursor = if i == active_field { "_" } else { "" };
-            lines.push(Line::from(format!("{} {}: {}{}", marker, field, val, cursor)));
+            lines.push(Line::from(format!(
+                "{} {}: {}{}",
+                marker, field, val, cursor
+            )));
         }
 
         lines.push(Line::from(""));
         lines.push(Line::from(" Tab: next field | Enter: save | Esc: cancel"));
 
         let popup = Paragraph::new(lines)
-            .block(Block::default().borders(Borders::ALL).title(format!(" {} ", title)))
+            .block(
+                Block::default()
+                    .borders(Borders::ALL)
+                    .title(format!(" {} ", title)),
+            )
             .wrap(Wrap { trim: false });
         frame.render_widget(popup, area);
     }
@@ -1331,17 +1376,23 @@ impl TuiApp {
         let mut lines = vec![
             Line::from(Span::styled(
                 "Fry TFTP Server",
-                Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD),
+                Style::default()
+                    .fg(Color::Cyan)
+                    .add_modifier(Modifier::BOLD),
             )),
             Line::from(Span::styled(
                 "High-performance, cross-platform TFTP server",
-                Style::default().fg(Color::Gray).add_modifier(Modifier::ITALIC),
+                Style::default()
+                    .fg(Color::Gray)
+                    .add_modifier(Modifier::ITALIC),
             )),
             Line::from(format!("Version: {}", version)),
             Line::from(""),
             Line::from(Span::styled(
                 "━━━ Supported RFCs ━━━",
-                Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD),
+                Style::default()
+                    .fg(Color::Yellow)
+                    .add_modifier(Modifier::BOLD),
             )),
             Line::from(""),
             Line::from(vec![
@@ -1367,7 +1418,9 @@ impl TuiApp {
             Line::from(""),
             Line::from(Span::styled(
                 "━━━ Features ━━━",
-                Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD),
+                Style::default()
+                    .fg(Color::Yellow)
+                    .add_modifier(Modifier::BOLD),
             )),
             Line::from(""),
         ];
@@ -1399,7 +1452,9 @@ impl TuiApp {
             Line::from(""),
             Line::from(Span::styled(
                 "━━━ About ━━━",
-                Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD),
+                Style::default()
+                    .fg(Color::Yellow)
+                    .add_modifier(Modifier::BOLD),
             )),
             Line::from(""),
             Line::from(vec![
@@ -1426,11 +1481,7 @@ impl TuiApp {
         ]);
 
         let help = Paragraph::new(lines)
-            .block(
-                Block::default()
-                    .borders(Borders::ALL)
-                    .title(" Help "),
-            )
+            .block(Block::default().borders(Borders::ALL).title(" Help "))
             .wrap(Wrap { trim: false });
         frame.render_widget(help, area);
     }

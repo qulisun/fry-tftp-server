@@ -7,8 +7,7 @@ use std::sync::Arc;
 use std::time::Duration;
 use tokio_util::sync::CancellationToken;
 use windows_service::service::{
-    ServiceControl, ServiceControlAccept, ServiceExitCode, ServiceState, ServiceStatus,
-    ServiceType,
+    ServiceControl, ServiceControlAccept, ServiceExitCode, ServiceState, ServiceStatus, ServiceType,
 };
 use windows_service::service_control_handler::{self, ServiceControlHandlerResult};
 use windows_service::{define_windows_service, service_dispatcher};
@@ -27,9 +26,7 @@ pub fn try_run_as_service() -> Result<bool, windows_service::Error> {
     // service_dispatcher::start will fail if we're not actually running as a service
     match service_dispatcher::start(SERVICE_NAME, ffi_service_main) {
         Ok(()) => Ok(true),
-        Err(windows_service::Error::Winapi(ref e))
-            if e.raw_os_error() == Some(1063) =>
-        {
+        Err(windows_service::Error::Winapi(ref e)) if e.raw_os_error() == Some(1063) => {
             // ERROR_FAILED_SERVICE_CONTROLLER_CONNECT (1063)
             // This means we're running in console mode, not as a service
             Ok(false)
@@ -53,8 +50,8 @@ fn run_service(_arguments: Vec<OsString>) -> Result<(), Box<dyn std::error::Erro
     // Set up service control handler
     let shutdown = shutdown_token.clone();
     let reload = reload_token.clone();
-    let status_handle = service_control_handler::register(SERVICE_NAME, move |control| {
-        match control {
+    let status_handle =
+        service_control_handler::register(SERVICE_NAME, move |control| match control {
             ServiceControl::Stop | ServiceControl::Shutdown => {
                 tracing::info!("received service control: stop/shutdown");
                 shutdown.cancel();
@@ -67,8 +64,7 @@ fn run_service(_arguments: Vec<OsString>) -> Result<(), Box<dyn std::error::Erro
             }
             ServiceControl::Interrogate => ServiceControlHandlerResult::NoError,
             _ => ServiceControlHandlerResult::NotImplemented,
-        }
-    })?;
+        })?;
 
     // Report Running status
     status_handle.set_service_status(ServiceStatus {

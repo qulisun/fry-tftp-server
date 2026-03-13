@@ -27,7 +27,10 @@ impl VirtualRoots {
         let mut roots: Vec<(String, PathBuf)> = map
             .iter()
             .map(|(alias, path)| {
-                let alias = alias.trim_start_matches('/').trim_start_matches('\\').to_string();
+                let alias = alias
+                    .trim_start_matches('/')
+                    .trim_start_matches('\\')
+                    .to_string();
                 (alias, PathBuf::from(path))
             })
             .collect();
@@ -95,7 +98,12 @@ pub fn resolve_path_with_virtual(
 }
 
 /// Resolve a requested TFTP path securely against the root directory.
-pub fn resolve_path(root: &Path, requested: &str, must_exist: bool, follow_symlinks: bool) -> Result<PathBuf, FsError> {
+pub fn resolve_path(
+    root: &Path,
+    requested: &str,
+    must_exist: bool,
+    follow_symlinks: bool,
+) -> Result<PathBuf, FsError> {
     validate_requested_path(requested)?;
     let stripped = requested.trim_start_matches('/').trim_start_matches('\\');
     if stripped.is_empty() {
@@ -104,7 +112,12 @@ pub fn resolve_path(root: &Path, requested: &str, must_exist: bool, follow_symli
     resolve_against_root(root, stripped, must_exist, follow_symlinks)
 }
 
-fn resolve_against_root(root: &Path, stripped: &str, must_exist: bool, follow_symlinks: bool) -> Result<PathBuf, FsError> {
+fn resolve_against_root(
+    root: &Path,
+    stripped: &str,
+    must_exist: bool,
+    follow_symlinks: bool,
+) -> Result<PathBuf, FsError> {
     #[cfg(target_os = "windows")]
     let stripped = stripped.replace('/', "\\");
 
@@ -145,8 +158,7 @@ fn resolve_against_root(root: &Path, stripped: &str, must_exist: bool, follow_sy
                 }
                 let canonical_root = std::fs::canonicalize(root)
                     .map_err(|_| FsError::InvalidPath("root dir not found".to_string()))?;
-                let canonical_parent =
-                    std::fs::canonicalize(parent).map_err(FsError::Io)?;
+                let canonical_parent = std::fs::canonicalize(parent).map_err(FsError::Io)?;
                 if !canonical_parent.starts_with(&canonical_root) {
                     return Err(FsError::AccessViolation(format!(
                         "resolved path escapes root: {}",
@@ -344,7 +356,8 @@ mod tests {
         let vroots = VirtualRoots::new(&map);
 
         let resolved =
-            resolve_path_with_virtual(main_dir.path(), &vroots, "firmware/fw.bin", true, true).unwrap();
+            resolve_path_with_virtual(main_dir.path(), &vroots, "firmware/fw.bin", true, true)
+                .unwrap();
         assert!(resolved.ends_with("fw.bin"));
 
         // File not in virtual root falls back to main

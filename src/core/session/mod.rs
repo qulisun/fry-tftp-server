@@ -276,17 +276,25 @@ fn spawn_session_task(
         match future.await {
             Ok(()) => {
                 tracing::info!(session_id=%session_id, client=%client_addr, file=%filename, event="transfer_complete");
-                state_clone.complete_session(session_id, SessionStatus::Completed).await;
+                state_clone
+                    .complete_session(session_id, SessionStatus::Completed)
+                    .await;
             }
             Err(e) => {
                 let msg = e.to_string();
                 // Don't log shutdown/cancel as errors
                 if msg.contains("cancelled") || msg.contains("shutdown") {
-                    state_clone.complete_session(session_id, SessionStatus::Cancelled).await;
+                    state_clone
+                        .complete_session(session_id, SessionStatus::Cancelled)
+                        .await;
                 } else {
                     tracing::warn!(session_id=%session_id, client=%client_addr, file=%filename, error=%e, event="transfer_failed");
-                    state_clone.complete_session(session_id, SessionStatus::Failed).await;
-                    state_clone.total_errors.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                    state_clone
+                        .complete_session(session_id, SessionStatus::Failed)
+                        .await;
+                    state_clone
+                        .total_errors
+                        .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
                 }
             }
         }
@@ -308,7 +316,11 @@ pub async fn spawn_read_session(
     // Resolve file (with virtual roots and symlink policy)
     let vroots = fs::VirtualRoots::new(&config.filesystem.virtual_roots);
     let file_path = match fs::resolve_path_with_virtual(
-        &config.server.root, &vroots, &filename, true, config.filesystem.follow_symlinks,
+        &config.server.root,
+        &vroots,
+        &filename,
+        true,
+        config.filesystem.follow_symlinks,
     ) {
         Ok(p) => p,
         Err(e) => {
@@ -317,7 +329,10 @@ pub async fn spawn_read_session(
                 fs::FsError::AccessViolation(_) => ErrorCode::AccessViolation,
                 _ => ErrorCode::NotDefined,
             };
-            let err_pkt = serialize_packet(&Packet::Error { code, message: e.to_string() });
+            let err_pkt = serialize_packet(&Packet::Error {
+                code,
+                message: e.to_string(),
+            });
             let _ = main_socket.send_to(&err_pkt, client_addr).await;
             tracing::warn!(client=%client_addr, file=%filename, error=%e, "file resolve failed");
             return;
@@ -327,22 +342,29 @@ pub async fn spawn_read_session(
     let file_size = match std::fs::metadata(&file_path) {
         Ok(m) => m.len(),
         Err(e) => {
-            let err_pkt = serialize_packet(&Packet::Error { code: ErrorCode::FileNotFound, message: e.to_string() });
+            let err_pkt = serialize_packet(&Packet::Error {
+                code: ErrorCode::FileNotFound,
+                message: e.to_string(),
+            });
             let _ = main_socket.send_to(&err_pkt, client_addr).await;
             return;
         }
     };
 
     let params = negotiate_options(&config, &options, Some(file_size));
-    let session_socket = match net::create_session_socket(&config, ip_version_for_client(&client_addr, &config)) {
-        Ok(s) => s,
-        Err(e) => {
-            tracing::error!(error=%e, "failed to create session socket");
-            let err_pkt = serialize_packet(&Packet::Error { code: ErrorCode::NotDefined, message: "Server error".to_string() });
-            let _ = main_socket.send_to(&err_pkt, client_addr).await;
-            return;
-        }
-    };
+    let session_socket =
+        match net::create_session_socket(&config, ip_version_for_client(&client_addr, &config)) {
+            Ok(s) => s,
+            Err(e) => {
+                tracing::error!(error=%e, "failed to create session socket");
+                let err_pkt = serialize_packet(&Packet::Error {
+                    code: ErrorCode::NotDefined,
+                    message: "Server error".to_string(),
+                });
+                let _ = main_socket.send_to(&err_pkt, client_addr).await;
+                return;
+            }
+        };
 
     let session_id = Uuid::new_v4();
     let info = SessionInfo {
@@ -374,9 +396,18 @@ pub async fn spawn_read_session(
 
     spawn_session_task(state, session_id, filename, client_addr, async move {
         run_read_session(
-            &session_socket, client_addr, &file_path, file_size,
-            mode, &params, &state_clone, session_id, &cancel_clone, &shutdown,
-        ).await
+            &session_socket,
+            client_addr,
+            &file_path,
+            file_size,
+            mode,
+            &params,
+            &state_clone,
+            session_id,
+            &cancel_clone,
+            &shutdown,
+        )
+        .await
     });
 }
 
@@ -412,7 +443,9 @@ async fn run_read_session(
         oack_handshake(socket, client_addr, params, max_retries, cancel, shutdown).await?;
     }
 
-    state.update_session(session_id, 0, SessionStatus::Transferring).await;
+    state
+        .update_session(session_id, 0, SessionStatus::Transferring)
+        .await;
 
     let blksize = params.blksize as usize;
     let windowsize = params.windowsize as u64;
@@ -535,11 +568,18 @@ pub async fn spawn_write_session(
     // Check if file already exists (with virtual roots and symlink policy)
     let vroots = fs::VirtualRoots::new(&config.filesystem.virtual_roots);
     let file_path = match fs::resolve_path_with_virtual(
-        &config.server.root, &vroots, &filename, false, config.filesystem.follow_symlinks,
+        &config.server.root,
+        &vroots,
+        &filename,
+        false,
+        config.filesystem.follow_symlinks,
     ) {
         Ok(p) => p,
         Err(e) => {
-            let err_pkt = serialize_packet(&Packet::Error { code: ErrorCode::AccessViolation, message: e.to_string() });
+            let err_pkt = serialize_packet(&Packet::Error {
+                code: ErrorCode::AccessViolation,
+                message: e.to_string(),
+            });
             let _ = main_socket.send_to(&err_pkt, client_addr).await;
             return;
         }
@@ -561,7 +601,10 @@ pub async fn spawn_write_session(
         if !parent.exists() {
             if config.filesystem.create_dirs {
                 if let Err(e) = std::fs::create_dir_all(parent) {
-                    let err_pkt = serialize_packet(&Packet::Error { code: ErrorCode::NotDefined, message: e.to_string() });
+                    let err_pkt = serialize_packet(&Packet::Error {
+                        code: ErrorCode::NotDefined,
+                        message: e.to_string(),
+                    });
                     let _ = main_socket.send_to(&err_pkt, client_addr).await;
                     return;
                 }
@@ -584,22 +627,29 @@ pub async fn spawn_write_session(
         if tsize > max_bytes {
             let err_pkt = serialize_packet(&Packet::Error {
                 code: ErrorCode::DiskFull,
-                message: format!("File too large: {} > {}", tsize, config.filesystem.max_file_size),
+                message: format!(
+                    "File too large: {} > {}",
+                    tsize, config.filesystem.max_file_size
+                ),
             });
             let _ = main_socket.send_to(&err_pkt, client_addr).await;
             return;
         }
     }
 
-    let session_socket = match net::create_session_socket(&config, ip_version_for_client(&client_addr, &config)) {
-        Ok(s) => s,
-        Err(e) => {
-            tracing::error!(error=%e, "failed to create session socket");
-            let err_pkt = serialize_packet(&Packet::Error { code: ErrorCode::NotDefined, message: "Server error".to_string() });
-            let _ = main_socket.send_to(&err_pkt, client_addr).await;
-            return;
-        }
-    };
+    let session_socket =
+        match net::create_session_socket(&config, ip_version_for_client(&client_addr, &config)) {
+            Ok(s) => s,
+            Err(e) => {
+                tracing::error!(error=%e, "failed to create session socket");
+                let err_pkt = serialize_packet(&Packet::Error {
+                    code: ErrorCode::NotDefined,
+                    message: "Server error".to_string(),
+                });
+                let _ = main_socket.send_to(&err_pkt, client_addr).await;
+                return;
+            }
+        };
 
     let session_id = Uuid::new_v4();
     let info = SessionInfo {
@@ -627,9 +677,17 @@ pub async fn spawn_write_session(
 
     spawn_session_task(state, session_id, filename, client_addr, async move {
         run_write_session(
-            &session_socket, client_addr, &file_path,
-            mode, &params, &state_clone, session_id, &cancel_clone, &shutdown,
-        ).await
+            &session_socket,
+            client_addr,
+            &file_path,
+            mode,
+            &params,
+            &state_clone,
+            session_id,
+            &cancel_clone,
+            &shutdown,
+        )
+        .await
     });
 }
 
@@ -665,7 +723,9 @@ async fn run_write_session(
         socket.send_to(&ack0, client_addr).await?;
     }
 
-    state.update_session(session_id, 0, SessionStatus::Transferring).await;
+    state
+        .update_session(session_id, 0, SessionStatus::Transferring)
+        .await;
 
     let mut received_data: Vec<u8> = Vec::new();
     let mut expected_block: u64 = 1;
@@ -849,7 +909,7 @@ mod tests {
         assert_eq!(compute_backoff(base, 2, true, max), Duration::from_secs(12));
         assert_eq!(compute_backoff(base, 3, true, max), Duration::from_secs(24));
         assert_eq!(compute_backoff(base, 4, true, max), Duration::from_secs(30)); // capped
-        // No backoff
+                                                                                  // No backoff
         assert_eq!(compute_backoff(base, 3, false, max), Duration::from_secs(3));
     }
 

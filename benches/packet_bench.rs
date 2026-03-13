@@ -73,9 +73,18 @@ fn bench_serialize_ack(c: &mut Criterion) {
 fn bench_serialize_oack(c: &mut Criterion) {
     let packet = Packet::Oack {
         options: vec![
-            TftpOption { name: "blksize".to_string(), value: "1468".to_string() },
-            TftpOption { name: "windowsize".to_string(), value: "64".to_string() },
-            TftpOption { name: "tsize".to_string(), value: "52428800".to_string() },
+            TftpOption {
+                name: "blksize".to_string(),
+                value: "1468".to_string(),
+            },
+            TftpOption {
+                name: "windowsize".to_string(),
+                value: "64".to_string(),
+            },
+            TftpOption {
+                name: "tsize".to_string(),
+                value: "52428800".to_string(),
+            },
         ],
     };
 

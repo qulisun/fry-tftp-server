@@ -195,13 +195,15 @@ fn init_logging(config: &Config) {
         let (non_blocking, _guard) = tracing_appender::non_blocking(file_appender);
         std::mem::forget(_guard);
 
-        Some(fmt::layer()
-            .with_target(true)
-            .with_thread_ids(false)
-            .with_file(false)
-            .with_line_number(false)
-            .with_ansi(false)
-            .with_writer(non_blocking))
+        Some(
+            fmt::layer()
+                .with_target(true)
+                .with_thread_ids(false)
+                .with_file(false)
+                .with_line_number(false)
+                .with_ansi(false)
+                .with_writer(non_blocking),
+        )
     } else {
         None
     };
@@ -231,7 +233,10 @@ fn init_syslog_layer() -> Option<tracing_journald::Layer> {
             Some(layer)
         }
         Err(e) => {
-            eprintln!("[logging] failed to connect to journald: {} (syslog disabled)", e);
+            eprintln!(
+                "[logging] failed to connect to journald: {} (syslog disabled)",
+                e
+            );
             None
         }
     }
@@ -247,7 +252,10 @@ fn init_syslog_layer() -> Option<fry_tftp_server::platform::windows_eventlog::Ev
             Some(layer)
         }
         Err(e) => {
-            eprintln!("[logging] failed to open Windows Event Log: {} (syslog disabled)", e);
+            eprintln!(
+                "[logging] failed to open Windows Event Log: {} (syslog disabled)",
+                e
+            );
             None
         }
     }
@@ -257,7 +265,10 @@ fn init_syslog_layer() -> Option<fry_tftp_server::platform::windows_eventlog::Ev
 /// Initialize logging with an in-app log buffer.
 /// When `console_output` is false (TUI mode), the console fmt layer is suppressed
 /// to prevent raw text from corrupting the terminal UI.
-fn init_logging_with_buffer(config: &Config, console_output: bool) -> fry_tftp_server::core::log_buffer::LogBuffer {
+fn init_logging_with_buffer(
+    config: &Config,
+    console_output: bool,
+) -> fry_tftp_server::core::log_buffer::LogBuffer {
     use tracing_subscriber::prelude::*;
     use tracing_subscriber::{fmt, EnvFilter};
 
@@ -291,24 +302,28 @@ fn init_logging_with_buffer(config: &Config, console_output: bool) -> fry_tftp_s
         let (non_blocking, _guard) = tracing_appender::non_blocking(file_appender);
         std::mem::forget(_guard);
 
-        Some(fmt::layer()
-            .with_target(true)
-            .with_thread_ids(false)
-            .with_file(false)
-            .with_line_number(false)
-            .with_ansi(false)
-            .with_writer(non_blocking))
+        Some(
+            fmt::layer()
+                .with_target(true)
+                .with_thread_ids(false)
+                .with_file(false)
+                .with_line_number(false)
+                .with_ansi(false)
+                .with_writer(non_blocking),
+        )
     } else {
         None
     };
 
     // Console layer — only for GUI, NOT for TUI (would corrupt terminal)
     let console_layer = if console_output {
-        Some(fmt::layer()
-            .with_target(true)
-            .with_thread_ids(false)
-            .with_file(false)
-            .with_line_number(false))
+        Some(
+            fmt::layer()
+                .with_target(true)
+                .with_thread_ids(false)
+                .with_file(false)
+                .with_line_number(false),
+        )
     } else {
         None
     };
@@ -376,7 +391,10 @@ fn check_resource_limits() {
                     "[warning] File descriptor limit is low: soft={}, hard={} (recommended: {})",
                     soft, hard, recommended
                 );
-                eprintln!("[warning] Run 'ulimit -n {}' or adjust /etc/security/limits.conf", recommended);
+                eprintln!(
+                    "[warning] Run 'ulimit -n {}' or adjust /etc/security/limits.conf",
+                    recommended
+                );
             }
         }
         Err(e) => {

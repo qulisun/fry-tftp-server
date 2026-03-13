@@ -189,8 +189,8 @@ impl eframe::App for TftpApp {
                                 self.dashboard = DashboardState::new();
                                 self.rt_handle.spawn(async move {
                                     // Reload config from disk
-                                    let new_config = crate::core::config::Config::load(None)
-                                        .unwrap_or_default();
+                                    let new_config =
+                                        crate::core::config::Config::load(None).unwrap_or_default();
                                     state.reset_for_restart(new_config).await;
                                     if let Err(e) = crate::core::run_server(state.clone()).await {
                                         tracing::error!(error=%e, "server start failed");
@@ -217,47 +217,48 @@ impl eframe::App for TftpApp {
             .show(ctx, |ui| {
                 ui.add_space(8.0);
 
-                let draw_sidebar_button = |ui: &mut egui::Ui, tab: &Tab, current: &mut Tab, theme: &Theme| {
-                    let selected = *tab == *current;
+                let draw_sidebar_button =
+                    |ui: &mut egui::Ui, tab: &Tab, current: &mut Tab, theme: &Theme| {
+                        let selected = *tab == *current;
 
-                    // Reserve space and check hover before drawing
-                    let desired_size = egui::vec2(ui.available_width(), 32.0);
-                    let (rect, response) = ui.allocate_exact_size(desired_size, egui::Sense::click());
+                        // Reserve space and check hover before drawing
+                        let desired_size = egui::vec2(ui.available_width(), 32.0);
+                        let (rect, response) =
+                            ui.allocate_exact_size(desired_size, egui::Sense::click());
 
-                    let hovered = response.hovered();
-                    let bg = if selected {
-                        theme.sidebar_selected_bg()
-                    } else if hovered {
-                        theme.sidebar_hover_bg()
-                    } else {
-                        egui::Color32::TRANSPARENT
+                        let hovered = response.hovered();
+                        let bg = if selected {
+                            theme.sidebar_selected_bg()
+                        } else if hovered {
+                            theme.sidebar_hover_bg()
+                        } else {
+                            egui::Color32::TRANSPARENT
+                        };
+                        let text_color = if selected || hovered {
+                            theme.sidebar_selected_text()
+                        } else {
+                            theme.sidebar_text()
+                        };
+
+                        // Draw rounded background
+                        ui.painter()
+                            .rect_filled(rect, egui::CornerRadius::same(8), bg);
+
+                        // Draw label with icon
+                        let label_text = format!("{} {}", tab.icon(), tab.label());
+                        let galley = ui.painter().layout_no_wrap(
+                            label_text,
+                            egui::FontId::proportional(14.0),
+                            text_color,
+                        );
+                        let text_pos =
+                            egui::pos2(rect.left() + 10.0, rect.center().y - galley.size().y / 2.0);
+                        ui.painter().galley(text_pos, galley, text_color);
+
+                        if response.clicked() {
+                            *current = *tab;
+                        }
                     };
-                    let text_color = if selected || hovered {
-                        theme.sidebar_selected_text()
-                    } else {
-                        theme.sidebar_text()
-                    };
-
-                    // Draw rounded background
-                    ui.painter().rect_filled(rect, egui::CornerRadius::same(8), bg);
-
-                    // Draw label with icon
-                    let label_text = format!("{} {}", tab.icon(), tab.label());
-                    let galley = ui.painter().layout_no_wrap(
-                        label_text,
-                        egui::FontId::proportional(14.0),
-                        text_color,
-                    );
-                    let text_pos = egui::pos2(
-                        rect.left() + 10.0,
-                        rect.center().y - galley.size().y / 2.0,
-                    );
-                    ui.painter().galley(text_pos, galley, text_color);
-
-                    if response.clicked() {
-                        *current = *tab;
-                    }
-                };
 
                 for tab in Tab::MAIN {
                     draw_sidebar_button(ui, tab, &mut self.current_tab, &self.theme);
@@ -282,11 +283,7 @@ impl eframe::App for TftpApp {
             .show(ctx, |ui| {
                 ui.horizontal_centered(|ui| {
                     ui.label(
-                        egui::RichText::new(format!(
-                            "Sessions: {}",
-                            active_sessions.len()
-                        ))
-                        .small(),
+                        egui::RichText::new(format!("Sessions: {}", active_sessions.len())).small(),
                     );
                     ui.separator();
                     ui.label(
@@ -308,9 +305,7 @@ impl eframe::App for TftpApp {
                     ui.label(
                         egui::RichText::new(format!(
                             "TX: {}",
-                            format_bytes_short(
-                                self.state.total_bytes_tx.load(Ordering::Relaxed)
-                            )
+                            format_bytes_short(self.state.total_bytes_tx.load(Ordering::Relaxed))
                         ))
                         .small(),
                     );
@@ -318,9 +313,7 @@ impl eframe::App for TftpApp {
                     ui.label(
                         egui::RichText::new(format!(
                             "RX: {}",
-                            format_bytes_short(
-                                self.state.total_bytes_rx.load(Ordering::Relaxed)
-                            )
+                            format_bytes_short(self.state.total_bytes_rx.load(Ordering::Relaxed))
                         ))
                         .small(),
                     );

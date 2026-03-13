@@ -9,10 +9,9 @@ pub async fn run(state: Arc<AppState>) -> anyhow::Result<()> {
     platform::register_signals(state.get_shutdown_token(), Some(state.clone())).await;
 
     // Start IPC listener for control commands (reload/stop/status)
-    if let Err(e) = crate::core::ipc::spawn_ipc_listener(
-        state.clone(),
-        state.get_shutdown_token(),
-    ).await {
+    if let Err(e) =
+        crate::core::ipc::spawn_ipc_listener(state.clone(), state.get_shutdown_token()).await
+    {
         tracing::warn!(error=%e, "IPC listener failed to start (control interface unavailable)");
     }
 

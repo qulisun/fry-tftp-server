@@ -30,16 +30,25 @@ pub async fn register_signals(shutdown_token: CancellationToken, state: Option<A
         // SIGUSR1 - state dump
         let dump_state = state.clone();
         tokio::spawn(async move {
-            let mut sigusr1 = signal(SignalKind::user_defined1()).expect("failed to register SIGUSR1");
+            let mut sigusr1 =
+                signal(SignalKind::user_defined1()).expect("failed to register SIGUSR1");
             loop {
                 sigusr1.recv().await;
                 let config = dump_state.config();
                 let server_state = dump_state.get_server_state();
                 let active = dump_state.count_sessions().await;
-                let total = dump_state.total_sessions.load(std::sync::atomic::Ordering::Relaxed);
-                let errors = dump_state.total_errors.load(std::sync::atomic::Ordering::Relaxed);
-                let tx = dump_state.total_bytes_tx.load(std::sync::atomic::Ordering::Relaxed);
-                let rx = dump_state.total_bytes_rx.load(std::sync::atomic::Ordering::Relaxed);
+                let total = dump_state
+                    .total_sessions
+                    .load(std::sync::atomic::Ordering::Relaxed);
+                let errors = dump_state
+                    .total_errors
+                    .load(std::sync::atomic::Ordering::Relaxed);
+                let tx = dump_state
+                    .total_bytes_tx
+                    .load(std::sync::atomic::Ordering::Relaxed);
+                let rx = dump_state
+                    .total_bytes_rx
+                    .load(std::sync::atomic::Ordering::Relaxed);
                 tracing::info!(
                     state=?server_state,
                     bind=%format!("{}:{}", config.server.bind_address, config.server.port),

@@ -46,7 +46,9 @@ pub async fn run(
             "Fry TFTP Server",
             options,
             Box::new(move |cc| {
-                Ok(Box::new(app::TftpApp::new(cc, state, log_buffer, tray_state)))
+                Ok(Box::new(app::TftpApp::new(
+                    cc, state, log_buffer, tray_state,
+                )))
             }),
         )
         .map_err(|e| anyhow::anyhow!("eframe error: {}", e))

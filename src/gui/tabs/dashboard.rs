@@ -203,8 +203,7 @@ pub fn draw(
 
                         if let Some(tsize) = session.tsize {
                             if tsize > 0 {
-                                let progress =
-                                    session.bytes_transferred as f32 / tsize as f32;
+                                let progress = session.bytes_transferred as f32 / tsize as f32;
                                 ui.add(egui::ProgressBar::new(progress).text(format!(
                                     "{} / {}",
                                     format_bytes(session.bytes_transferred),
