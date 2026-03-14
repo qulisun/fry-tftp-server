@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="new.png" alt="Fry TFTP Server" width="128" height="128">
+  <img src="screenshots/icon.png" alt="Fry TFTP Server" width="128" height="128">
 </p>
 
 <h1 align="center">Fry TFTP Server</h1>
@@ -94,6 +94,18 @@ Download the `.dmg` from [Releases](https://github.com/qulisun/fry-tftp-server/r
 
 > **Note:** On first launch, right-click the app and select **Open** (macOS Gatekeeper). Port 69 works without sudo on macOS Ventura+.
 
+### Windows
+
+Download `fry-tftp-server-windows-x86_64.zip` from [Releases](https://github.com/qulisun/fry-tftp-server/releases), extract, and double-click `fry-tftp-server.exe`.
+
+> **First launch:** Windows SmartScreen may show "Windows protected your PC". Click **More info** → **Run anyway**. This happens because the binary is not code-signed.
+>
+> **Alternative:** Right-click the `.exe` → **Properties** → check **Unblock** → **OK**. This removes the SmartScreen warning permanently for this file.
+>
+> **PowerShell:** `Unblock-File -Path .\fry-tftp-server.exe`
+
+Port 69 requires Administrator privileges on Windows. Right-click → **Run as Administrator**, or use `-p <port>` with a port above 1024.
+
 ---
 
 ## Build Options
@@ -171,13 +183,32 @@ sudo cp deploy/com.fry-tftp-server.plist /Library/LaunchDaemons/
 sudo launchctl load /Library/LaunchDaemons/com.fry-tftp-server.plist
 ```
 
-### Windows Service
+### Windows
+
+**GUI mode** — just double-click `fry-tftp-server.exe`. No console window, no setup needed.
+
+**As a Windows Service** (runs in background, survives reboot):
 
 ```powershell
-# Run as Administrator
-.\deploy\install-windows-service.ps1
+# Run PowerShell as Administrator
+
+# Install the service
+fry-tftp-server.exe --install-service
+
+# Start
 Start-Service FryTFTPServer
+
+# Check status
+Get-Service FryTFTPServer
+
+# Stop
+Stop-Service FryTFTPServer
+
+# Uninstall
+fry-tftp-server.exe --uninstall-service
 ```
+
+The service runs in headless mode and can be managed via `services.msc` or PowerShell. Configuration is loaded from `%APPDATA%\fry-tftp-server\config.toml`.
 
 ---
 
