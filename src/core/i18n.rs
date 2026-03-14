@@ -70,6 +70,7 @@ impl I18n {
             Lang::En => en(),
             Lang::Ru => ru(),
             Lang::De => de(),
+            Lang::Es => es(),
         };
     }
 
