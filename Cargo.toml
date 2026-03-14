@@ -5,14 +5,14 @@ edition = "2021"
 rust-version = "1.75"
 description = "Fry TFTP Server — cross-platform high-performance TFTP server"
 license = "MIT"
-repository = "https://github.com/2f-it/fry-tftp-server"
-homepage = "https://github.com/2f-it/fry-tftp-server"
+repository = "https://github.com/qulisun/fry-tftp-server"
+homepage = "https://github.com/qulisun/fry-tftp-server"
 keywords = ["tftp", "server", "networking", "pxe"]
 categories = ["network-programming", "command-line-utilities"]
 
 [package.metadata.deb]
-maintainer = "2F-IT GmbH"
-copyright = "2026, 2F-IT GmbH"
+maintainer = "Viacheslav Gordeev"
+copyright = "2026, Viacheslav Gordeev"
 depends = "$auto"
 section = "net"
 priority = "optional"
