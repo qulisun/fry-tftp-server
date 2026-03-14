@@ -33,6 +33,16 @@ Fry TFTP Server is a modern TFTP server built in Rust, designed for network engi
 
 ---
 
+## Screenshots
+
+### GUI Mode — 10 concurrent firmware downloads at 843 MB/s
+![GUI Dashboard](screenshots/gui.png)
+
+### TUI Mode — Terminal interface with real-time monitoring
+![TUI Dashboard](screenshots/tui.png)
+
+---
+
 ## Features
 
 | Category | Details |
