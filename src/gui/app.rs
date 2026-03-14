@@ -67,7 +67,7 @@ impl TftpApp {
             tray_state,
             last_tray_visual: TrayVisualState::Running,
             show_about: false,
-            i18n: I18n::new(Lang::from_str(&config.gui.language)),
+            i18n: I18n::new(Lang::parse(&config.gui.language)),
             rt_handle: tokio::runtime::Handle::current(),
             dashboard: DashboardState::new(),
             files: FilesState::new(root),
@@ -98,7 +98,7 @@ impl eframe::App for TftpApp {
         ctx.request_repaint_after(Duration::from_millis(250));
 
         // Sync language from config
-        let cfg_lang = Lang::from_str(&self.state.config().gui.language);
+        let cfg_lang = Lang::parse(&self.state.config().gui.language);
         if cfg_lang != self.i18n.lang() {
             self.i18n.set_lang(cfg_lang);
         }

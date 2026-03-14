@@ -218,6 +218,7 @@ impl TftpTestClient {
         let total_chunks = if data.is_empty() { 1 } else { chunks.len() };
         let needs_empty_final = !data.is_empty() && data.len() % blksize == 0;
 
+        #[allow(clippy::needless_range_loop)]
         for i in 0..total_chunks {
             let block = (i + 1) as u16;
             let chunk = if data.is_empty() {

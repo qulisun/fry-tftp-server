@@ -6,7 +6,7 @@ fn bench_parse_rrq(c: &mut Criterion) {
     // RRQ: opcode(2) + "firmware.bin\0" + "octet\0" + "blksize\0" + "1468\0"
     let mut pkt = Vec::new();
     pkt.extend_from_slice(&[0, 1]); // RRQ
-    pkt.extend_from_slice(b"firmware.bin\0octet\0blksize\01468\0windowsize\064\0");
+    pkt.extend_from_slice(b"firmware.bin\x00octet\x00blksize\x001468\x00windowsize\x0064\x00");
 
     c.bench_function("parse_rrq_with_options", |b| {
         b.iter(|| {
@@ -50,7 +50,7 @@ fn bench_parse_error(c: &mut Criterion) {
 fn bench_serialize_data(c: &mut Criterion) {
     let packet = Packet::Data {
         block: 42,
-        data: vec![0xAB; 1468].into(),
+        data: vec![0xAB; 1468],
     };
 
     c.bench_function("serialize_data_1468", |b| {

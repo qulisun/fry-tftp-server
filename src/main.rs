@@ -109,7 +109,7 @@ fn main() -> anyhow::Result<()> {
 
     // Capture CLI overrides for config reload
     let cli_overrides = fry_tftp_server::core::config::CliOverrides {
-        config_path: cli.config.map(PathBuf::from),
+        config_path: cli.config.clone(),
         port: cli.port,
         bind: cli.bind.clone(),
         root: cli.root.clone(),

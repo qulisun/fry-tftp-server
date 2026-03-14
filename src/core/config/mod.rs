@@ -570,8 +570,10 @@ mod tests {
 
     #[test]
     fn test_max_file_size_bytes() {
-        let mut fs = FilesystemConfig::default();
-        fs.max_file_size = "4GB".to_string();
+        let fs = FilesystemConfig {
+            max_file_size: "4GB".to_string(),
+            ..Default::default()
+        };
         assert_eq!(fs.max_file_size_bytes(), 4 * 1024 * 1024 * 1024);
     }
 }

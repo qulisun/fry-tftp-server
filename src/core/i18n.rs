@@ -15,7 +15,7 @@ pub enum Lang {
 }
 
 impl Lang {
-    pub fn from_str(s: &str) -> Self {
+    pub fn parse(s: &str) -> Self {
         match s.to_lowercase().as_str() {
             "ru" | "russian" => Lang::Ru,
             "de" | "german" | "deutsch" => Lang::De,

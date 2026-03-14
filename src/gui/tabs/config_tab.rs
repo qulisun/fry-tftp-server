@@ -335,7 +335,7 @@ pub fn draw(ui: &mut Ui, state: &Arc<AppState>, cs: &mut ConfigState, i18n: &I18
                 ui.label(i18n.t("language_label"));
                 let prev = cs.language.clone();
                 egui::ComboBox::from_id_salt("lang_combo")
-                    .selected_text(crate::core::i18n::Lang::from_str(&cs.language).name())
+                    .selected_text(crate::core::i18n::Lang::parse(&cs.language).name())
                     .show_ui(ui, |ui| {
                         for lang in crate::core::i18n::Lang::ALL {
                             ui.selectable_value(

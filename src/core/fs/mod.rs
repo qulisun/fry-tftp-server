@@ -121,6 +121,7 @@ fn resolve_against_root(
     #[cfg(target_os = "windows")]
     let stripped = stripped.replace('/', "\\");
 
+    #[allow(clippy::needless_borrows_for_generic_args)]
     let joined = root.join(&stripped);
 
     if must_exist {
